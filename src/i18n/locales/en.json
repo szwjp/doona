@@ -218,6 +218,10 @@
   "config.incomplete": "The text is incomplete or redacted; it cannot be edited here",
   "config.incompleteNote": "The text shown is incomplete, or its SHA-256 differs from the value the backend reports, so it cannot be edited here. Edit the file on the host.",
   "config.incompleteSource": "Incomplete",
+  "config.entrySource": "Entry file",
+  "config.entrySourceNote": "This is dae's entry file. It only includes the other files, so it cannot be rewritten.",
+  "config.unmanaged": "Unmanaged layout",
+  "config.unmanagedNote": "The configuration directory does not follow dae's managed layout, so every write is turned off.",
   "config.invalid": {
     "one": "Validation found {n} error",
     "other": "Validation found {n} errors"

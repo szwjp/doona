@@ -105,3 +105,25 @@ describe('dae', () => {
     expect(dae.globalSettings?.name).toBe('global');
   });
 });
+
+describe('dae read-only reasons', () => {
+  // dae reports the two reasons the contract does not name in the source's x-dae member.
+  it('names the entry file and an unmanaged layout', () => {
+    expect(dae.readOnlyReason?.({'x-dae': {read_only_reason: 'entry_source'}} as never)).toEqual({
+      code: 'entrySource',
+      label: 'config.entrySource',
+      note: 'config.entrySourceNote'
+    });
+    expect(dae.readOnlyReason?.({'x-dae': {read_only_reason: 'layout_unmanaged'}} as never)).toEqual({
+      code: 'unmanaged',
+      label: 'config.unmanaged',
+      note: 'config.unmanagedNote'
+    });
+  });
+
+  it('says nothing when the source carries no dae reason', () => {
+    expect(dae.readOnlyReason?.({} as never)).toBeUndefined();
+    expect(dae.readOnlyReason?.({'x-dae': {}} as never)).toBeUndefined();
+    expect(dae.readOnlyReason?.({'x-dae': {read_only_reason: 'writes_disabled'}} as never)).toBeUndefined();
+  });
+});

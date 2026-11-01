@@ -1,5 +1,6 @@
 import type {SettingsSection} from '../../dae/settings';
 import type {TextBlock} from '../../dae/text';
+import type {Key} from '../../i18n';
 import type {Capabilities, ConfigRevisionList, ConfigSource, EffectiveConfig, OperationAccepted, RuntimeSettings} from '../model';
 
 // What the engine can be asked about: a capabilities resource, or an action that can be off while its resource is on,
@@ -110,6 +111,10 @@ export type Engine = {
   reason(subject: EngineSubject, capabilities: Capabilities, recording?: RuntimeSettings['recording']): EngineReason | undefined;
   // Whether the engine refuses to write a source because its text holds credentials it will not write back.
   holdsCredentials(source: Pick<ConfigSource, 'content'>): boolean;
+  // The engine's own reason a source cannot be written, for the reasons the contract does not name.
+  // The contract's read_only_reason covers the causes it defines; an engine that has others reports them
+  // here with the text to show, and undefined when it has none.
+  readOnlyReason?(source: Pick<ConfigSource, 'content' | 'writable'> & Record<string, unknown>): {code: string; label: Key; note: Key} | undefined;
   // The settings as a snippet of the engine's configuration text.
   snippet(settings: EngineSetting[]): string;
   // The top-level sections whose text the engine redacts when it returns a source, each with the name the page shows.

@@ -1,5 +1,6 @@
 import {daeGlobal, daeRestartOnly} from './daeSettings';
 import {blockFields, scanConfig} from '../../dae/text';
+import type {Key} from '../../i18n';
 import type {Capabilities} from '../model';
 import type {Engine, EngineReason, EngineSetting, EngineSubject} from './types';
 
@@ -14,6 +15,17 @@ const lacks: EngineReason = {code: 'build-lacks'};
 function holdsApiSecret(text: string): boolean {
   const {blocks, tokens} = scanConfig(text);
   return blocks.some(block => block.name === 'api' && blockFields(text, block, tokens).some(field => field.name === 'secret'));
+}
+
+// The contract's read_only_reason names only the causes it defines, so dae reports the two it knows
+// on its own -- the entry file and an unmanaged layout -- in the source's `x-dae` member
+// (cmd/config_editor.go readOnlyReasons).
+function readOnlyReason(source: Record<string, unknown>): {code: string; label: Key; note: Key} | undefined {
+  const extension = source['x-dae'] as {read_only_reason?: unknown} | undefined;
+  const reason = extension?.read_only_reason;
+  if (reason === 'entry_source') return {code: 'entrySource', label: 'config.entrySource', note: 'config.entrySourceNote'};
+  if (reason === 'layout_unmanaged') return {code: 'unmanaged', label: 'config.unmanaged', note: 'config.unmanagedNote'};
+  return undefined;
 }
 
 // Writes dotted setting names as nested sections; consecutive settings in one section share it.
@@ -110,6 +122,7 @@ export const dae: Engine = {
   // Reading these back needs a BPF_PROG_QUERY per hook, or a switch into the daens namespace for dae0peer.
   uncheckedHooks: ['cgroup', 'sk_lookup', 'dae0peer'],
   holdsCredentials: source => holdsApiSecret(source.content),
+  readOnlyReason,
   snippet: (settings: EngineSetting[]) =>
     nest(
       settings.map(({key, value}) => ({path: key.split('.'), value})),

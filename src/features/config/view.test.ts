@@ -430,3 +430,24 @@ it('explains writes that are off with the overview text, setting and docs link',
   expect(limitHint('config', capabilities, version, t, 'en')).toBeUndefined();
   expect(readOnlyBadge({kind: 'main', writable: true, content: ''}, true, true, honk, t)).toBeNull();
 });
+
+it('shows the reason the engine reports on its own when the contract names none', () => {
+  const source = {kind: 'main' as const, writable: false, content: ''};
+  const dae = engineOf({engine: {name: 'dae', version: 'v2.1.1'}} as never);
+  expect(readOnlyBadge({...source, 'x-dae': {read_only_reason: 'entry_source'}} as never, true, true, dae, t)).toMatchObject({
+    reason: 'entrySource',
+    label: t('config.entrySource'),
+    note: t('config.entrySourceNote')
+  });
+  expect(readOnlyBadge({...source, 'x-dae': {read_only_reason: 'layout_unmanaged'}} as never, true, true, dae, t)).toMatchObject({
+    reason: 'unmanaged',
+    label: t('config.unmanaged'),
+    note: t('config.unmanagedNote')
+  });
+  // The contract's own reason still wins over the engine's.
+  expect(
+    readOnlyBadge({...source, read_only_reason: 'writes_disabled', 'x-dae': {read_only_reason: 'entry_source'}} as never, true, true, dae, t)
+  ).toMatchObject({reason: 'disabled'});
+  // An engine that names no reason leaves the badge to the inference.
+  expect(readOnlyBadge({...source} as never, true, true, dae, t)?.reason).toBe('refused');
+});

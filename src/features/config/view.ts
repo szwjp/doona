@@ -169,7 +169,7 @@ export function sourceView(source: ConfigSource, locale: string, t: Translator):
 }
 type SourceView = {id: string; label: string; kind: string; facts: string; loaded: string};
 
-type ReadOnlyReason = 'generated' | 'subscription' | 'disabled' | 'secret' | 'refused' | 'incomplete';
+type ReadOnlyReason = 'generated' | 'subscription' | 'disabled' | 'secret' | 'refused' | 'incomplete' | 'entrySource' | 'unmanaged';
 // The badge and the line under the text saying what the file is and what can be done with it. A help popover beside
 // the badge is kept only for what the line has no room for: how to turn configuration writes on.
 const readOnlyText: Record<ReadOnlyReason, {label: Key; note: Key; help?: Key}> = {
@@ -178,17 +178,23 @@ const readOnlyText: Record<ReadOnlyReason, {label: Key; note: Key; help?: Key}> 
   disabled: {label: 'config.readOnly', note: 'config.readOnlyNote', help: 'config.readOnlyHelp'},
   secret: {label: 'config.secretSource', note: 'config.secretNote'},
   refused: {label: 'config.readOnly', note: 'config.refusedNote'},
-  incomplete: {label: 'config.incompleteSource', note: 'config.incompleteNote'}
+  incomplete: {label: 'config.incompleteSource', note: 'config.incompleteNote'},
+  // The reasons an engine reports on its own, outside the contract's read_only_reason.
+  entrySource: {label: 'config.entrySource', note: 'config.entrySourceNote'},
+  unmanaged: {label: 'config.unmanaged', note: 'config.unmanagedNote'}
 };
+// The reasons an engine may report on its own. A code outside this set is ignored, so an engine that
+// names a reason doona does not show yet falls back to the inferred badge.
+const ownReadOnlyReasons = new Set<ReadOnlyReason>(['entrySource', 'unmanaged']);
 // Prefer the backend reason; older backends fall back to source kind and credential detection. Text that does not match
 // its digest is reported as incomplete: honk refuses any source whose content it masks, so a writable mismatch is never redaction.
 // The hint, when the engine gives one, explains writes that are off with the overview's text, setting and docs link,
 // whether the backend reports writes as disabled or the badge infers it.
 export function readOnlyBadge(
-  source: Pick<ConfigSource, 'kind' | 'writable' | 'content' | 'read_only_reason'>,
+  source: Pick<ConfigSource, 'kind' | 'writable' | 'content' | 'read_only_reason'> & Record<string, unknown>,
   configWritable: boolean,
   complete: boolean | undefined,
-  engine: Pick<Engine, 'holdsCredentials'>,
+  engine: Pick<Engine, 'holdsCredentials'> & Partial<Pick<Engine, 'readOnlyReason'>>,
   t: Translator,
   hint?: LimitHint
 ): {reason: ReadOnlyReason; label: string; note: string; help?: Help} | null {
@@ -205,6 +211,13 @@ export function readOnlyBadge(
     const label = t(readOnlyText[reason].label);
     const help = helpFor(reason, label);
     return {reason, label, note: reported, ...(help && {help})};
+  }
+  // A reason the engine reports on its own, outside the contract's read_only_reason. It comes after the
+  // contract's cause, so a source the contract already explains keeps the contract's wording.
+  const own = engine.readOnlyReason?.(source);
+  if (own && ownReadOnlyReasons.has(own.code as ReadOnlyReason)) {
+    const reason = own.code as ReadOnlyReason;
+    return {reason, label: t(own.label), note: t(own.note)};
   }
   const reason: ReadOnlyReason | null =
     source.kind === 'generated' || source.kind === 'subscription'
