@@ -1940,6 +1940,8 @@
   "settings.invalidUrl": "Enter http(s)://host[:port][/prefix] without credentials, a query, or a fragment, or enter mock.",
   "settings.lensPause": "Pause refraction while scrolling",
   "settings.lensPauseHelp": "Keeps scrolling smooth. Edges bend again once the page stops.",
+  "settings.limitNotice": "Show the off-feature count on the status card",
+  "settings.limitNoticeHelp": "Shows how many features are off on the Activity status card. When off, it says View details; the full list stays in System Status.",
   "settings.logBuffer": "Log records kept",
   "settings.logLevel": "Log level",
   "settings.mirror": "Mirrored layout",
