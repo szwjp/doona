@@ -430,7 +430,8 @@ test.describe('390px page links', () => {
   test('a press that moves before release still navigates and selects no text', async ({page}) => {
     const hub = hubs.find(item => item.pages.length > 1)!;
     await page.goto(`/#/${hub.pages[0]}`);
-    const link = page.locator('.rp-hubnav .rp-btn').nth(1);
+    // The startup Skeleton draws inert page links first; the press goes to the shell's own.
+    const link = page.locator('.rp-hubnav:not([inert]) .rp-btn').nth(1);
     await expect(link).toHaveAttribute('draggable', 'false');
     const at = (await link.boundingBox())!;
     await page.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
