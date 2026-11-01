@@ -26,6 +26,10 @@ describe('engineOf', () => {
     expect(engineOf({engine: {name: 'constructor', version: '1'}}).id).toBe('unknown');
   });
 
+  it('knows dae by its engine name', () => {
+    expect(engineOf({...version, engine: {...version.engine, name: 'dae'}}).id).toBe('dae');
+  });
+
   it.each([
     ['honk', version, 'systemctl restart honk-core', true],
     ['an unknown engine', {...version, engine: {...version.engine, name: 'other'}}, null, false],
@@ -40,6 +44,17 @@ describe('engineOf', () => {
     const extension = {'x-honk': {config_export: {available: true}, config_import: {available: false}, config_revisions: {available: true}}};
     const management = configManagement(config, {...capabilities, extensions: extension});
     expect([management.export, management.revisions, management.off.import]).toEqual([managed, managed, managed]);
+  });
+
+  it('gives dae its restart command, its restart-only settings and a configuration extension without export, import or revisions', () => {
+    const reported = {...version, engine: {...version.engine, name: 'dae'}};
+    const engine = engineOf(reported);
+    expect(engine.restartCommand).toBe('systemctl restart dae');
+    expect(engine.restartOnly.includes('log_level')).toBe(true);
+    const config = configOf(reported);
+    expect(config !== null).toBe(true);
+    const management = configManagement(config, capabilities);
+    expect([management.export, management.import, management.revisions]).toEqual([false, false, false]);
   });
 });
 

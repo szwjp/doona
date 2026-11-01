@@ -1,4 +1,5 @@
 import type {Version} from '../model';
+import {dae} from './dae';
 import {honk} from './honk';
 import type {Engine} from './types';
 
@@ -25,6 +26,8 @@ export function engineOf(version: Pick<Version, 'engine'> | undefined): Engine {
   switch (version?.engine.name) {
     case 'honk':
       return honk;
+    case 'dae':
+      return dae;
     default:
       return unknown;
   }

@@ -1,4 +1,5 @@
 import type {Capabilities, Version} from '../model';
+import {daeConfig} from './daeConfig';
 import {honkConfig} from './honkConfig';
 import type {ConfigManagement, EngineConfig} from './types';
 
@@ -8,6 +9,8 @@ export function configOf(version: Pick<Version, 'engine'> | undefined): EngineCo
   switch (version?.engine.name) {
     case 'honk':
       return honkConfig;
+    case 'dae':
+      return daeConfig;
     default:
       return null;
   }
