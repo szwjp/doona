@@ -1,7 +1,7 @@
 {
   "name": "doona",
   "private": true,
-  "version": "0.1.0-rc.4",
+  "version": "0.1.0-rc.5",
   "description": "Static web UI for the daeuniverse native API.",
   "repository": {
     "type": "git",
@@ -42,13 +42,13 @@
   },
   "sizeBudget": {
     "startupLogin": 213700,
-    "startupActivity": 327034,
+    "startupActivity": 327693,
     "startupCss": 30962,
     "locale": 25463,
     "fontCss": 36000,
     "route": 72800,
     "routePart": 16000,
-    "routeConfig": 196091,
+    "routeConfig": 196153,
     "mock": 38000
   },
   "dependencies": {

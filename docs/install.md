@@ -2,7 +2,7 @@
 
 English / [简体中文](install.zh-CN.md) / [繁體中文](install.zh-TW.md)
 
-doona is distributed as static web files. The current release is v0.1.0-rc.4; doona lite is a preview in testing.
+doona is distributed as static web files. The current release is v0.1.0-rc.5; doona lite is a preview in testing.
 
 For installation, use the documentation site's [system requirements](https://doona.daeuniverse.org/en/requirements.html), [installation guide](https://doona.daeuniverse.org/en/install.html) and [doona lite guide](https://doona.daeuniverse.org/en/lite.html). Those pages cover backend setup, distribution-specific instructions and first sign-in. This page describes the files built by this repository. For where to download honk builds, see [Matching honk builds](#matching-honk-builds).
 
