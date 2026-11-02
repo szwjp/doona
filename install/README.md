@@ -72,12 +72,12 @@ ebuild's pre-release version with this overlay rule:
 ```toml
 ["net-proxy/doona"]
 source = "github"
-github = "Zakkaus/doona"
+github = "szwjp/doona"
 use_latest_release = true
 prefix = "v"
 from_pattern = '-(alpha|beta|rc)\.(\d+)$'
 to_pattern = '_\1\2'
-github_account = "Zakkaus"
+github_account = "szwjp"
 ```
 
 The nixpkgs expression names a `zakkaus` maintainer; nixpkgs wants that entry in `maintainers/maintainer-list.nix`
@@ -127,7 +127,7 @@ Each release builds its apk packages with a signing key generated for that run a
 Alpine signs every package. Install the key, then the packages:
 
 ```sh
-wget -O /etc/apk/keys/doona-alpine.rsa.pub https://github.com/Zakkaus/doona/releases/download/<tag>/doona-alpine.rsa.pub
+wget -O /etc/apk/keys/doona-alpine.rsa.pub https://github.com/szwjp/doona/releases/download/<tag>/doona-alpine.rsa.pub
 apk add ./doona-<version>-r0.alpine.apk ./doona-precompressed-<version>-r0.alpine.apk
 ```
 
