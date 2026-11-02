@@ -1,6 +1,7 @@
 import {LocalError} from '../api/error';
 import {expect, it} from 'vitest';
-import {modeRuleLines, readMode, sameMode, writeMode} from './outboundMode';
+import {modeRuleLines, modeSource, readMode, sameMode, writeMode} from './outboundMode';
+import type {ConfigSource} from '../api/model';
 
 const config = `global {
     log_level: info
@@ -120,4 +121,26 @@ dns {
 `;
   expect(modeRuleLines(text)).toEqual([2]);
   expect(modeRuleLines('routing { l4proto(tcp) -> direct # doona: outbound mode\n}')).toEqual([]);
+});
+
+it('gives the mode to the writable source that holds the routing section', () => {
+  const sources = [
+    {id: 'main', kind: 'main', writable: false, content: 'include {\n  config.d/*.dae\n}\n'},
+    {id: 'routing', kind: 'include', writable: true, content: 'routing {\n  fallback: direct\n}\n'},
+    {id: 'global', kind: 'include', writable: true, content: 'global {\n  log_level: info\n}\n'}
+  ] as ConfigSource[];
+  expect(modeSource(sources)?.id).toBe('routing');
+});
+
+it('keeps the entry file as the owner when no writable source holds the section', () => {
+  const sources = [
+    {id: 'main', kind: 'main', writable: false, content: 'routing {\n  fallback: direct\n}\n'},
+    {id: 'global', kind: 'include', writable: true, content: 'global {\n  log_level: info\n}\n'}
+  ] as ConfigSource[];
+  expect(modeSource(sources)?.id).toBe('main');
+});
+
+it('leaves an engine whose writable entry holds the section with that entry', () => {
+  const sources = [{id: 'main', kind: 'main', writable: true, content: 'routing {\n  fallback: direct\n}\n'}] as ConfigSource[];
+  expect(modeSource(sources)?.id).toBe('main');
 });

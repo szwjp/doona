@@ -1,4 +1,5 @@
 import {LocalError} from '../api/error';
+import type {ConfigSource} from '../api/model';
 import {scanConfig, type TextBlock, type TextToken} from './text';
 
 // The marker lets mode changes remove their catch-all without touching authored rules.
@@ -79,6 +80,19 @@ export function writeMode(text: string, next: OutboundMode): string {
 }
 
 export const sameMode = (a: OutboundMode, b: OutboundMode) => a.mode === b.mode && (a.mode !== 'global' || b.mode !== 'global' || a.target === b.target);
+
+// The routing section owns the outbound mode, so the source that holds that section owns the mode. dae keeps its
+// entry file read-only and puts the routing rules into an included file, so the owner is that file and not the entry;
+// an engine whose entry file holds the section itself is unaffected.
+export function modeSource(sources: ConfigSource[]): ConfigSource | null {
+  const writable = sources.filter(source => source.writable);
+  const owner = writable.find(source => {
+    const {blocks} = scanConfig(source.content);
+    return blocks.some(block => block.name === 'routing');
+  });
+  if (owner) return owner;
+  return writable.find(source => source.kind === 'main') ?? sources.find(source => source.kind === 'main') ?? null;
+}
 
 export function modeRuleLines(text: string): number[] {
   const scanned = scanConfig(text);
