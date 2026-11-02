@@ -84,14 +84,18 @@ export const sameMode = (a: OutboundMode, b: OutboundMode) => a.mode === b.mode 
 // The routing section owns the outbound mode, so the source that holds that section owns the mode. dae keeps its
 // entry file read-only and puts the routing rules into an included file, so the owner is that file and not the entry;
 // an engine whose entry file holds the section itself is unaffected.
+function holdsRouting(source: ConfigSource): boolean {
+  const {blocks} = scanConfig(source.content);
+  return blocks.some(block => block.name === 'routing');
+}
+
 export function modeSource(sources: ConfigSource[]): ConfigSource | null {
   const writable = sources.filter(source => source.writable);
-  const owner = writable.find(source => {
-    const {blocks} = scanConfig(source.content);
-    return blocks.some(block => block.name === 'routing');
-  });
+  const owner = writable.find(holdsRouting);
   if (owner) return owner;
-  return writable.find(source => source.kind === 'main') ?? sources.find(source => source.kind === 'main') ?? null;
+  // No writable source holds the section: the card still reads the mode from the source that has it, but a
+  // read-only source cannot take the mode, so it stays read-only.
+  return sources.find(holdsRouting) ?? writable.find(source => source.kind === 'main') ?? sources.find(source => source.kind === 'main') ?? null;
 }
 
 export function modeRuleLines(text: string): number[] {

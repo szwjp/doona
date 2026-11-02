@@ -132,6 +132,14 @@ it('gives the mode to the writable source that holds the routing section', () =>
   expect(modeSource(sources)?.id).toBe('routing');
 });
 
+it('prefers the writable holder of the section over a read-only one', () => {
+  const sources = [
+    {id: 'main', kind: 'main', writable: false, content: 'routing {\n  fallback: direct\n}\n'},
+    {id: 'routing', kind: 'include', writable: true, content: 'routing {\n  fallback: proxy\n}\n'}
+  ] as ConfigSource[];
+  expect(modeSource(sources)?.id).toBe('routing');
+});
+
 it('keeps the entry file as the owner when no writable source holds the section', () => {
   const sources = [
     {id: 'main', kind: 'main', writable: false, content: 'routing {\n  fallback: direct\n}\n'},

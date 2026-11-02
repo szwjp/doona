@@ -19,7 +19,7 @@ export function useMode() {
   const resources = capabilities?.resources;
   const groups = useGroups(offered(resources, 'groups', {whileLoading: false}));
   const config = useConfig(offered(resources, 'config', {whileLoading: false}));
-  const {checking, writable, busy, error, retry, apply: write} = useMainSourceEdit();
+  const {writable, busy, error, retry, apply: write} = useMainSourceEdit();
   // The mode is a rule doona writes into dae text, so another engine's configuration neither shows nor takes one.
   // Until the version names the engine the card waits as it does for the configuration.
   const version = useVersion().data;
@@ -41,7 +41,7 @@ export function useMode() {
     current,
     staged,
     groups.data ?? [],
-    daeText && writable && ownerComplete !== false && (!!owner || checking),
+    daeText && writable && ownerComplete !== false && owner?.writable === true,
     configAvailable,
     t,
     content != null,
