@@ -22,14 +22,14 @@ const resourcePages: Record<keyof typeof resourceLabels, string> = {
   dns_log: href('dns', {tab: 'log'}),
   events: href('events'),
   probes: href('nodes', {tab: 'latency'}),
-  traffic_history: href('activity'),
-  memory_history: href('activity'),
-  runtime_outbounds: href('activity'),
+  traffic_history: href('activity', {card: 'history'}),
+  memory_history: href('activity', {card: 'memory'}),
+  runtime_outbounds: href('activity', {card: 'outbounds'}),
   logs: href('logs'),
   providers: href('nodes'),
   rules: href('rules', {tab: 'list'}),
   config: href('config'),
-  config_validate: href('config', {tab: 'source', panel: 'diagnostics'}),
+  config_validate: href('config', {tab: 'validate'}),
   runtime_settings: href('settings', {card: 'runtime'}),
   geodata: href('settings', {card: 'geodata'})
 };
@@ -175,6 +175,8 @@ export function overviewView(
   const count = (value: number | null) => (value === null ? '—' : formatNumber(value, locale));
   const section = (present: boolean, busy: boolean) => (present ? ('ready' as const) : busy ? ('loading' as const) : ('unavailable' as const));
   return {
+    // The status row has nothing to show until the runtime is read.
+    waiting: !runtime && (loading.capabilities || loading.runtime),
     status: engineStatus(state, datapath?.state, t(loading.capabilities || loading.runtime ? 'ov.loading' : 'ov.unknown'), t),
     strip: [
       {label: t('ov.config'), value: shortId(revision), full: revision, help: {title: t('ov.config'), text: t('config.revisionHelp')}},

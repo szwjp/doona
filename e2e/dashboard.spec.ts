@@ -258,7 +258,7 @@ test.describe('status details link', () => {
       expect(line.end).toBeLessThanOrEqual(1);
     }
     await links.click();
-    await expect(page).toHaveURL(/#\/overview$/);
+    await expect(page).toHaveURL(/#\/overview\?card=limits$/);
   });
 
   test('no features off shows only View details', async ({page}) => {
@@ -277,6 +277,30 @@ test.describe('status details link', () => {
     await expect(links).toHaveAccessibleName(details);
     await links.click();
     await expect(page).toHaveURL(/#\/overview$/);
+  });
+
+  test('the Settings switch hides the count on the status card and shows it again', async ({page}) => {
+    const field = page.locator('[data-setting="limitNotice"]');
+    const toggle = field.getByRole('switch', {name: translate('zh-TW', 'settings.limitNotice'), exact: true});
+    // The input is hidden under its track, so a click goes to the switch as drawn.
+    const flip = () => field.locator('.rp-switch').click();
+    const links = tile(page, 'status').getByRole('link');
+    await page.goto('/#/activity');
+    await expect(links).toHaveText(translate('zh-TW', 'act.limited', {n: 1}));
+    await page.goto('/#/settings?tab=appearance');
+    await expect(toggle).toBeChecked();
+    await flip();
+    await expect(toggle).not.toBeChecked();
+    await page.goto('/#/activity');
+    await expect(links).toHaveText(translate('zh-TW', 'act.viewDetails'));
+    await page.reload();
+    await expect(links).toHaveText(translate('zh-TW', 'act.viewDetails'));
+    await page.goto('/#/settings?tab=appearance');
+    await expect(toggle).not.toBeChecked();
+    await flip();
+    await expect(toggle).toBeChecked();
+    await page.goto('/#/activity');
+    await expect(links).toHaveText(translate('zh-TW', 'act.limited', {n: 1}));
   });
 });
 
@@ -1216,10 +1240,11 @@ const showing = (page: Page) =>
       })
     )
   );
-// Every card drawn with its content: scrolled into view once and past its chart placeholder.
+// Every card drawn with its content: scrolled into view once and past its chart placeholder. The scroll runs in the page
+// in one step: a cell the dashboard redraws while Playwright waits for it to hold still is detached under the action.
 const settle = async (page: Page) => {
   for (const cell of await page.locator('.rp-dash-section > .rp-dashboard-cell').all()) {
-    await cell.scrollIntoViewIfNeeded();
+    await cell.evaluate(element => element.scrollIntoView({block: 'nearest'}));
     await expect(cell.locator('.rp-chart-wait')).toHaveCount(0);
   }
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -1228,6 +1253,8 @@ for (const width of [1280, 390])
   test(`edit mode shows every card's content and controls as the page does at ${width} px`, async ({page}) => {
     await page.setViewportSize({width, height: 900});
     await page.goto('/#/activity');
+    // The startup Skeleton draws the same sections and cards, so the page is in once it has gone.
+    await expect(page.locator('.rp-content .rp-page-skeleton')).toHaveCount(0);
     await expect(page.locator("[data-profile='details'] .rp-card")).toHaveCount(3);
     await settle(page);
     const view = await showing(page);

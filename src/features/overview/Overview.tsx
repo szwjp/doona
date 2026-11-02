@@ -1,4 +1,5 @@
 import {cardHeadings, useOverview} from './useOverview';
+import {statusRow} from './skeleton';
 import {useT} from '../../i18n';
 import {
   ActionGroup,
@@ -15,6 +16,7 @@ import {
   TextLink,
   TextTooltip,
   ErrorMessage,
+  PageSkeleton,
   SkeletonBody,
   Skeleton,
   Empty,
@@ -22,11 +24,11 @@ import {
 } from '../../ui/ui';
 import Download from '../../ui/icons/Download';
 import InfoCircle from '../../ui/icons/InfoCircle';
-import {tableLayout} from '../../ui/tableHooks';
 import type {LimitHelp} from '../shared/limits';
 import {ReloadConfirm} from '../shared/ReloadConfirm';
 import {DaeCode} from '../../ui/DaeCode';
 import type {PageProps} from '../../shell/routes';
+import {href} from '../../shell/route';
 
 // After S2's ContextualHelp, with its label beside the icon: a popover with the cause, the settings that lift it and a link.
 function LimitHelpButton({help}: {help: LimitHelp}) {
@@ -53,8 +55,10 @@ function LimitHelpButton({help}: {help: LimitHelp}) {
     </PopoverDialog>
   );
 }
-// The least the attachments table takes: its frame, heading and two rows.
-const attachmentsFloor = 2 + tableLayout.headingHeight + 2 * tableLayout.rowHeight;
+// The attachments table's height, at most, which its Skeleton draws while the datapath loads; its rows set the height below it.
+const attachmentsHeight = 250;
+// The status card's count of these is a display preference; the card's link opens its switch.
+const limitNoticeSetting = href('settings', {card: 'appearance', field: 'limitNotice'});
 export function Overview({query}: PageProps) {
   const t = useT();
   const vm = useOverview(query);
@@ -62,32 +66,36 @@ export function Overview({query}: PageProps) {
   return (
     <div className="rp-page">
       <ErrorMessage error={vm.errors.capabilities} onRetry={vm.retry.capabilities} />
-      <div className="rp-between" id={cardHeadings.status}>
-        <div className="rp-cluster">
-          {vm.status.href ? (
-            <Link appearance="link" href={vm.status.href}>
-              {status}
-            </Link>
-          ) : (
-            status
-          )}
-          <Kv row items={vm.strip} />
-          {vm.reload && (
-            <TextTooltip text={vm.reload.tooltip}>
-              <Light small tone={vm.reload.tone}>
-                {vm.reload.text}
-              </Light>
-            </TextTooltip>
-          )}
+      {vm.waiting ? (
+        <PageSkeleton shape={statusRow} />
+      ) : (
+        <div className="rp-between" id={cardHeadings.status}>
+          <div className="rp-cluster">
+            {vm.status.href ? (
+              <Link appearance="link" href={vm.status.href}>
+                {status}
+              </Link>
+            ) : (
+              status
+            )}
+            <Kv row items={vm.strip} />
+            {vm.reload && (
+              <TextTooltip text={vm.reload.tooltip}>
+                <Light small tone={vm.reload.tone}>
+                  {vm.reload.text}
+                </Light>
+              </TextTooltip>
+            )}
+          </div>
+          <div className="rp-cluster">
+            <ActionGroup actions={[{id: 'export', label: t('ov.export'), icon: <Download />, isDisabled: !vm.canExport, onAction: vm.export}, ...vm.actions]} />
+            <ReloadConfirm {...vm.confirmReload} />
+            <ConfirmDialog {...vm.confirmSuspend} title={t('ov.suspendTitle')} confirmLabel={t('ov.suspend')}>
+              <p className="rp-label">{t('ov.suspendHelp')}</p>
+            </ConfirmDialog>
+          </div>
         </div>
-        <div className="rp-cluster">
-          <ActionGroup actions={[{id: 'export', label: t('ov.export'), icon: <Download />, isDisabled: !vm.canExport, onAction: vm.export}, ...vm.actions]} />
-          <ReloadConfirm {...vm.confirmReload} />
-          <ConfirmDialog {...vm.confirmSuspend} title={t('ov.suspendTitle')} confirmLabel={t('ov.suspend')}>
-            <p className="rp-label">{t('ov.suspendHelp')}</p>
-          </ConfirmDialog>
-        </div>
-      </div>
+      )}
       <div className="rp-g3">
         <Card title={t('ov.f.engine')}>
           <ErrorMessage error={vm.errors.version} onRetry={vm.retry.version} />
@@ -126,7 +134,7 @@ export function Overview({query}: PageProps) {
           {vm.memory.state === 'ready' ? (
             <Kv items={vm.memory.fields} />
           ) : vm.memory.state === 'loading' ? (
-            <Skeleton facts={8} />
+            <Skeleton facts={7} helped={[2]} metered={[0]} />
           ) : vm.errors.memory ? null : (
             <Empty>{t('ov.unavailable')}</Empty>
           )}
@@ -141,7 +149,7 @@ export function Overview({query}: PageProps) {
               {vm.datapath.showAttachments && (
                 <DataTable
                   label={t('ov.attachments')}
-                  height={250}
+                  height={attachmentsHeight}
                   rows={vm.datapath.attachments}
                   empty={t('ov.noAttachments')}
                   cols={[
@@ -154,7 +162,7 @@ export function Overview({query}: PageProps) {
               )}
             </>
           ) : vm.datapath.state === 'loading' ? (
-            <Skeleton facts={10} below={attachmentsFloor} />
+            <Skeleton facts={10} below={attachmentsHeight} typical />
           ) : vm.errors.datapath ? null : (
             <Empty>{t('ov.unavailable')}</Empty>
           )}
@@ -207,7 +215,7 @@ export function Overview({query}: PageProps) {
         </Card>
       </div>
       {vm.limits.length > 0 && (
-        <Card title={t('ov.lim.title')} titleId={cardHeadings.limits}>
+        <Card title={t('ov.lim.title')} titleId={cardHeadings.limits} aside={<TextLink link={{href: limitNoticeSetting, text: t('ov.lim.noticeSetting')}} />}>
           <ul className="rp-limits">
             {vm.limits.map(group => (
               <li key={group.cause} className="rp-limit">

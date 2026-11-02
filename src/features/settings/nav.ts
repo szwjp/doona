@@ -1,6 +1,7 @@
 import type {Capabilities, RuntimeSettingField} from '../../api/model';
 import type {Key} from '../../i18n';
 import {pickTab} from '../../shell/route';
+import {settingsTabs, type SettingsTab} from './tabs';
 
 // The page's cards in order. The page renders them in this order and search lists the same
 // cards, so both take their titles from here; `?card=` scrolls to the card's heading, id `settings-{id}`.
@@ -18,10 +19,8 @@ export const settingsCards: ReadonlyArray<{id: SettingsCardId; titleKey: Key; al
 export const settingsCardList = (resources: Capabilities['resources'] | undefined) =>
   settingsCards.filter(card => card.id !== 'geodata' || resources?.geodata.available);
 
-// The page's tabs: Appearance holds its own card, General every other one. A `?card=` link opens its card's tab, so
-// search and links land on a card whichever tab was open; otherwise `?tab=` picks one.
-export const settingsTabs = ['general', 'appearance'] as const;
-type SettingsTab = (typeof settingsTabs)[number];
+// Appearance holds its own card, General every other one. A `?card=` link opens its card's tab, so search and links land
+// on a card whichever tab was open; otherwise `?tab=` picks one.
 export const cardTab = (id: SettingsCardId): SettingsTab => (id === 'appearance' ? 'appearance' : 'general');
 export function settingsTab(query: string): SettingsTab {
   const card = settingsCards.find(card => card.id === new URLSearchParams(query).get('card'));
@@ -56,6 +55,7 @@ type SettingsFieldId =
   | 'startPage'
   | 'countryFlags'
   | 'sparklines'
+  | 'limitNotice'
   | 'mirrored'
   | 'wallpaper'
   | 'blur'
@@ -91,6 +91,7 @@ export const settingsFields: ReadonlyArray<SettingsField> = [
   {id: 'startPage', card: 'appearance', labelKey: 'settings.startPage', aliases: ['start page', 'home page']},
   {id: 'countryFlags', card: 'appearance', labelKey: 'settings.countryFlags', aliases: ['flags']},
   {id: 'sparklines', card: 'appearance', labelKey: 'settings.sparklines', aliases: ['sparklines']},
+  {id: 'limitNotice', card: 'appearance', labelKey: 'settings.limitNotice', aliases: ['status card']},
   {id: 'mirrored', card: 'appearance', labelKey: 'settings.mirror', aliases: ['rtl']},
   {id: 'wallpaper', card: 'appearance', labelKey: 'settings.wallpaper', aliases: ['background', 'image']},
   {id: 'blur', card: 'appearance', labelKey: 'settings.blur'},

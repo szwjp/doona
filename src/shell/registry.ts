@@ -4,6 +4,18 @@ import {withCatalogue, type Key} from '../i18n';
 import type {ComponentType} from 'react';
 import {preloadable} from '../ui/preloadable';
 import type {PageShape} from '../ui/PageSkeleton';
+import {defaultDashboard} from './widgets/skeleton';
+import {policyCards} from '../features/policies/skeleton';
+import {trafficSkeleton} from '../features/connections/skeleton';
+import {configSkeleton} from '../features/config/skeleton';
+import {overviewSkeleton} from '../features/overview/skeleton';
+import {connectionsTabs} from '../features/connections/nav';
+import {flowsTabs} from '../features/flows/nav';
+import {dnsTabs} from '../features/dns/nav';
+import {allRuleTabs} from '../features/rules/tabs';
+import {nodesTabs} from '../features/nodes/tabs';
+import {settingsTabs, settingsTabTitle} from '../features/settings/tabs';
+import {ruleListSkeleton} from '../features/rules/skeleton';
 import type {Capabilities} from '../api/model';
 import type {PageProps, RoutePath} from './routes';
 import {searchDialog} from './search/load';
@@ -19,6 +31,9 @@ import History from '../ui/icons/History';
 import SpeedFast from '../ui/icons/SpeedFast';
 import SettingsIcon from '../ui/icons/Settings';
 import Shuffle from '../ui/icons/Shuffle';
+
+// The tab row of a Skeleton, from the page's own tabs.
+const tabKeys = (tabs: ReadonlyArray<{titleKey: Key}>) => tabs.map(tab => tab.titleKey);
 
 function lazyPage(load: () => Promise<{default: ComponentType<PageProps>}>) {
   const page = preloadable<PageProps>(load);
@@ -57,66 +72,86 @@ const definitions = {
     shortcut: 'a',
     nav: {titleKey: 'nav.activity', Icon: SpeedFast},
     ...activity,
-    // The dashboard draws its saved cards with their Skeletons while capabilities load; this stands in for its code.
+    // The default layout's cards in their cells; the page draws the saved layout's own (DashboardSkeleton) once its code is in.
     early: true,
-    skeleton: [
-      {cards: [94, 94, 94], columns: 3},
-      {cards: [110, 110, 110, 110, 110], columns: 5},
-      {cards: [226, 226], columns: '2fr 1fr'}
-    ],
+    skeleton: [{sections: defaultDashboard}],
     requires: {}
   },
   overview: {
-    skeleton: [{toolbar: 3}, {cards: [410, 410, 410], columns: 3}, {cards: [497, 497], columns: '2fr 1fr'}],
+    skeleton: overviewSkeleton,
     shortcut: 'o',
     nav: {titleKey: 'nav.overview', hintKey: 'hint.overview', Icon: Home},
     ...lazyPage(withCatalogue('rest', () => import('../features/overview/Overview').then(m => ({default: m.Overview})))),
     requires: {resources: ['runtime']}
   },
   connections: {
-    skeleton: [{tabs: 2}, {facts: 4}, {cards: [422, 308]}],
+    skeleton: [{tabs: tabKeys(connectionsTabs())}, ...trafficSkeleton],
     shortcut: 'c',
     nav: {titleKey: 'nav.connections', hintKey: 'hint.connections', Icon: Link},
     ...lazyPage(withCatalogue('rest', () => import('../features/connections/Connections').then(m => ({default: m.Connections})))),
     requires: {resources: ['connections']}
   },
   flows: {
-    skeleton: [{tabs: 2}, {toolbar: 2}, {cards: [560]}],
+    skeleton: [{tabs: tabKeys(flowsTabs(undefined))}, {toolbar: 3, end: 1}, {cards: [560], typical: true}],
     shortcut: 'f',
     nav: {titleKey: 'nav.flows', hintKey: 'hint.flows', Icon: Shuffle},
     ...lazyPage(withCatalogue('rest', () => import('../features/flows/Flows').then(m => ({default: m.Flows})))),
     requires: {resources: ['flows']}
   },
   dns: {
-    skeleton: [{tabs: 4}, {facts: 4}, {cards: [451, 451], columns: '2fr 1fr'}, {cards: [330, 330], columns: '2fr 1fr'}],
+    skeleton: [
+      {tabs: tabKeys(dnsTabs(undefined))},
+      {facts: 4},
+      {
+        cards: [
+          [451, 498],
+          [451, 451]
+        ],
+        columns: '2fr 1fr'
+      },
+      {
+        cards: [
+          [330, 334],
+          [330, 290]
+        ],
+        columns: '2fr 1fr'
+      }
+    ],
     shortcut: 'd',
     nav: {titleKey: 'nav.dns', hintKey: 'hint.dns', Icon: GlobeGrid},
     ...lazyPage(withCatalogue('rest', () => import('../features/dns/Dns').then(m => ({default: m.Dns})))),
     requires: {resources: ['dns_query', 'dns_log', 'dns_cache']}
   },
   policies: {
-    skeleton: [{toolbar: 1}, {line: true}, {cards: [614, 142, 150, 150]}],
+    skeleton: [{toolbar: 3, end: 1, height: [32, 84]}, {line: 'body'}, ...policyCards],
     shortcut: 'p',
     nav: {titleKey: 'nav.policies', hintKey: 'hint.policies', Icon: Share},
     ...lazyPage(withCatalogue('rest', () => import('../features/policies/Policies').then(m => ({default: m.Policies})))),
     requires: {resources: ['groups', 'config']}
   },
   rules: {
-    skeleton: [{tabs: 3}, {toolbar: 3}, {table: 12}],
+    skeleton: [{tabs: tabKeys(allRuleTabs)}, ...ruleListSkeleton],
     shortcut: 'r',
     nav: {titleKey: 'nav.rules', hintKey: 'hint.rules', Icon: ListBulleted},
     ...lazyPage(withCatalogue('rest', () => import('../features/rules/Rules').then(m => ({default: m.Rules})))),
     requires: {resources: ['routing_trace', 'flows', 'rules', 'dns_rules']}
   },
   nodes: {
-    skeleton: [{tabs: 2}, {toolbar: 2}, {cards: [224, 224], grid: true}, {line: true}, {toolbar: 4}, {table: 12}],
+    skeleton: [
+      {tabs: tabKeys(nodesTabs(undefined))},
+      {toolbar: 2, height: [32, 72]},
+      {cards: [224], grid: true, typical: true},
+      {line: 'caption'},
+      {toolbar: 4, height: [32, 132]},
+      {table: 12}
+    ],
     shortcut: 'n',
     nav: {titleKey: 'nav.nodes', hintKey: 'hint.nodes', Icon: Data},
     ...lazyPage(withCatalogue('rest', () => import('../features/nodes/Nodes').then(m => ({default: m.Nodes})))),
     requires: {resources: ['nodes', 'providers']}
   },
   config: {
-    skeleton: [{toolbar: 3, height: 24}, {tabs: 3}, {toolbar: 1}, {toolbar: 1, height: 16}, {block: 560}],
+    skeleton: configSkeleton,
     shortcut: 'e',
     nav: {titleKey: 'nav.config', hintKey: 'hint.config', Icon: FileText},
     ...lazyPage(withCatalogue('rest', () => import('../features/config/Config').then(m => ({default: m.Config})))),
@@ -125,21 +160,34 @@ const definitions = {
     requires: {resources: ['config']}
   },
   events: {
-    skeleton: [{toolbar: 3}, {table: 10}],
+    skeleton: [{toolbar: 3, end: 1, height: [32, 116]}, {table: 10}],
     shortcut: 'v',
     nav: {titleKey: 'nav.events', hintKey: 'hint.events', Icon: History},
     ...lazyPage(withCatalogue('rest', () => import('../features/events/Events').then(m => ({default: m.Events})))),
     requires: {resources: ['events']}
   },
   logs: {
-    skeleton: [{toolbar: 3}, {table: 10}],
+    skeleton: [{column: [{toolbar: 3, height: [32, 84]}, {line: 'caption'}]}, {column: [{facts: 2, caption: true}, {cards: [[227, 239]]}]}, {table: 10}],
     shortcut: 'l',
     nav: {titleKey: 'nav.logs', hintKey: 'hint.logs', Icon: TextAlignLeft},
     ...lazyPage(withCatalogue('rest', () => import('../features/logs/Logs').then(m => ({default: m.Logs})))),
     requires: {resources: ['logs']}
   },
   settings: {
-    skeleton: [{line: true}, {cards: [222, 506, 378, 258]}],
+    skeleton: [
+      {tabs: settingsTabs.map(tab => settingsTabTitle[tab])},
+      // The runtime and geodata cards list what the backend offers, and the about card's text wraps with its version.
+      {
+        cards: [
+          [286, 414],
+          [490, 998],
+          [549, 681],
+          [326, 530],
+          [102, 154]
+        ],
+        typical: [1, 2, 4]
+      }
+    ],
     shortcut: 's',
     nav: {titleKey: 'nav.settings', Icon: SettingsIcon},
     ...lazyPage(withCatalogue('rest', () => import('../features/settings/Settings').then(m => ({default: m.Settings})))),

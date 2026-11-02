@@ -31,7 +31,8 @@ import {About} from '../../shell/About';
 import {openShortcuts} from '../../shell/shortcuts';
 import type {PageProps, RoutePath} from '../../shell/routes';
 import {replaceRoute, within} from '../../shell/route';
-import {cardTab, settingsCard, settingsCards, settingsTab, settingsTabs, type SettingsCardId} from './nav';
+import {cardTab, settingsCard, settingsCards, settingsTab, type SettingsCardId} from './nav';
+import {settingsTabs, settingsTabTitle} from './tabs';
 
 // A Glass palette applies once its stylesheet loads, so pointing at or focusing one of its boxes starts the load.
 const glassIntent = (event: React.SyntheticEvent) => {
@@ -99,6 +100,7 @@ export function Settings({query}: PageProps) {
   const mirrorHelpId = useId();
   const countryFlagsHelpId = useId();
   const sparklinesHelpId = useId();
+  const limitNoticeHelpId = useId();
   const tab = settingsTab(query);
   // Switching tabs replaces the address rather than adding a step: both tabs stay mounted, so a draft in either
   // survives the switch and there is nothing to ask about. It drops the card a link landed on, which would pick the tab.
@@ -310,6 +312,14 @@ export function Settings({query}: PageProps) {
             {t('settings.sparklinesHelp')}
           </span>
         </div>
+        <div className="rp-field" data-setting="limitNotice">
+          <Switch isSelected={ap.limitNotice} onChange={ap.pickLimitNotice} aria-describedby={limitNoticeHelpId}>
+            {t('settings.limitNotice')}
+          </Switch>
+          <span id={limitNoticeHelpId} className="rp-label">
+            {t('settings.limitNoticeHelp')}
+          </span>
+        </div>
         <div className="rp-field" data-setting="mirrored">
           <Switch isSelected={ap.mirrored} onChange={ap.pickMirrored} aria-describedby={mirrorHelpId}>
             {t('settings.mirror')}
@@ -355,7 +365,7 @@ export function Settings({query}: PageProps) {
         label={t('nav.settings')}
         items={settingsTabs.map(id => ({
           id,
-          label: t(id === 'general' ? 'settings.general' : 'settings.appearance'),
+          label: t(settingsTabTitle[id]),
           content: settingsCards.filter(card => cardTab(card.id) === id).map(card => <Fragment key={card.id}>{content[card.id]}</Fragment>)
         }))}
         value={tab}
