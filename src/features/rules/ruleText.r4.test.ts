@@ -42,11 +42,11 @@ it('keeps a must rule as written when its target did not change, and writes an o
   const anchor = ruleAnchor(routingSource, mustRule)!;
   expect(routingText.slice(anchor.target!.from, anchor.target!.to).trim()).toBe('must_direct');
   expect(replaceRuleTarget(routingText, anchor, 'direct', true)).toBe(routingText);
-  expect(replaceRule(routingText, anchor, 'mac(00:e0:4c:2c:1a:b5)', 'direct', true)).toBe(
-    routingText.replace("mac('00:e0:4c:2c:1a:b5') -> must_direct", 'mac(00:e0:4c:2c:1a:b5) -> must_direct')
+  expect(replaceRule(routingText, anchor, 'mac(00:00:00:00:00:00)', 'direct', true)).toBe(
+    routingText.replace("mac('00:00:00:00:00:00') -> must_direct", 'mac(00:00:00:00:00:00) -> must_direct')
   );
   expect(replaceRuleTarget(routingText, anchor, 'proxy', false)).toBe(
-    routingText.replace("mac('00:e0:4c:2c:1a:b5') -> must_direct", "mac('00:e0:4c:2c:1a:b5') -> proxy")
+    routingText.replace("mac('00:00:00:00:00:00') -> must_direct", "mac('00:00:00:00:00:00') -> proxy")
   );
   // The list says this rule is not a must rule, so the line no longer holds it: never edit its neighbour.
   expect(ruleAnchor(routingSource, {...mustRule, must: false})).toBeNull();
