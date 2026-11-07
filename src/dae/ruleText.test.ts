@@ -36,12 +36,14 @@ it('refuses changed source anchors, unavailable identities and non-routing locat
   expect(ruleAnchor(source, {...rule, source: {...rule.source!, line: 3}})).toBeNull();
 });
 
-it('anchors a rule whose display expression ends with its outbound', () => {
+it('anchors a rule by its condition, whatever target its expression shows', () => {
   const shown = {...rule, expression: 'l4proto(tcp, udp) -> mix'};
   expect(ruleAnchor(source, shown)).toEqual(ruleAnchor(source, {...shown, expression: 'l4proto(tcp, udp)'}));
   expect(ruleAnchor(source, shown)).not.toBeNull();
   expect(ruleAnchor(source, {...shown, expression: 'l4proto(tcp) -> mix'})).toBeNull();
-  expect(ruleAnchor(source, {...shown, expression: 'l4proto(tcp, udp) -> mix(must)'})).toBeNull();
+  // The r4 expression is the source text, so only the condition before its top-level arrow is compared and the target
+  // it spells is left to the source line the anchor already validated.
+  expect(ruleAnchor(source, {...shown, expression: 'l4proto(tcp, udp) -> mix(must)'})).not.toBeNull();
 });
 
 it('replaces only the target of a rule, keeping its condition, continuation lines and comment', () => {
@@ -273,4 +275,76 @@ it('keeps a DNS upstream spelling when the selected target is unchanged', () => 
   const source = {...dnsSource, content};
   const anchor = dnsRuleAnchor(source, dnsRule(8, 'qname(geosite: cn)', 'upstream', 'alidns'), 'request')!;
   expect(replaceRule(content, anchor, 'qtype(AAAA)', 'alidns', false)).toBe(content.replace('qname(geosite: cn) -> AliDNS', 'qtype(AAAA) -> AliDNS'));
+});
+
+it('compares a must target however the source and the list spell it, without rewriting the source spelling', () => {
+  const content = 'routing {\n  pname(curl) -> must_direct\n  fallback: must_proxy\n}\n';
+  const source = {id: 'source', content} as ConfigSource;
+  const listed: RoutingRule = {...rule, expression: 'pname(curl) -> must_direct', outbound: 'direct', must: true, source: {...rule.source!, line: 2}};
+  const anchor = ruleAnchor(source, listed)!;
+  expect(anchor).not.toBeNull();
+  expect(replaceRuleTarget(content, anchor, 'direct', true)).toBe(content);
+  expect(replaceRule(anchor && content, anchor, 'pname(wget)', 'direct', true)).toBe(content.replace('pname(curl)', 'pname(wget)'));
+  // A response may keep the parameter in the outbound and leave must false; the same target still anchors.
+  expect(ruleAnchor(source, {...listed, outbound: 'direct("must")', must: false})).not.toBeNull();
+  // The engine reporting both the parameter and the field anchors too.
+  expect(ruleAnchor(source, {...listed, outbound: 'direct("must")', must: true})).not.toBeNull();
+  // A line that no longer holds a must rule is a different rule.
+  expect(ruleAnchor(source, {...listed, must: false})).toBeNull();
+  expect(ruleAnchor(source, {...listed, outbound: 'proxy', must: true})).toBeNull();
+  // The parenthesised spelling of the same target.
+  const paren = {...rule, expression: 'pname(curl) -> direct(must)', outbound: 'direct', must: true, source: {...rule.source!, line: 2}};
+  const parenContent = content.replace('-> must_direct', '-> direct(must)');
+  const parenAnchor = ruleAnchor({...source, content: parenContent}, paren)!;
+  expect(parenAnchor).not.toBeNull();
+  expect(replaceRuleTarget(parenContent, parenAnchor, 'direct', true)).toBe(parenContent);
+  // A must fallback compares the same way.
+  const fallback: RoutingRule = {
+    ...rule,
+    kind: 'fallback',
+    expression: 'fallback: must_proxy',
+    outbound: 'proxy',
+    must: true,
+    source: {...rule.source!, line: 3}
+  };
+  expect(ruleAnchor(source, fallback)).not.toBeNull();
+  expect(ruleAnchor(source, {...fallback, must: false})).toBeNull();
+});
+
+it('compares a multiline expression condition and ignores the target it shows', () => {
+  const content = 'routing {\n  domain(suffix: a.com,\n    # mirror\n    suffix: b.com) -> proxy # tail\n  fallback: direct\n}\n';
+  const source = {id: 'source', content} as ConfigSource;
+  const shown = 'domain(suffix: a.com,\n    # mirror\n    suffix: b.com) -> proxy';
+  const listed: RoutingRule = {...rule, expression: shown, outbound: 'proxy', must: false, source: {...rule.source!, line: 2}};
+  const anchor = ruleAnchor(source, listed)!;
+  expect(anchor).not.toBeNull();
+  expect(replaceRule(content, anchor, '!pname(firefox)', 'block', false)).toBe(
+    'routing {\n  # mirror\n  !pname(firefox) -> block # tail\n  fallback: direct\n}\n'
+  );
+  expect(replaceRuleTarget(content, anchor, 'proxy', false)).toBe(content);
+  // The expression may stop before the arrow: only the condition is compared.
+  expect(ruleAnchor(source, {...listed, expression: 'domain(suffix: a.com,\n    # mirror\n    suffix: b.com)'})).not.toBeNull();
+  expect(ruleAnchor(source, {...listed, expression: 'domain(suffix: a.com, suffix: c.com) -> proxy'})).toBeNull();
+});
+
+it('finds the top-level arrow of an expression, not one inside a quoted parameter', () => {
+  const content = "routing {\n  domain(keyword: 'a->b') -> proxy\n}\n";
+  const source = {id: 'source', content} as ConfigSource;
+  const listed: RoutingRule = {...rule, expression: "domain(keyword: 'a->b') -> proxy", outbound: 'proxy', must: false, source: {...rule.source!, line: 2}};
+  expect(ruleAnchor(source, listed)).not.toBeNull();
+  expect(ruleAnchor(source, {...listed, expression: "domain(keyword: 'a->b')"})).not.toBeNull();
+  expect(ruleAnchor(source, {...listed, expression: "domain(keyword: 'c->d') -> proxy"})).toBeNull();
+});
+
+it('matches a DNS action target against the bare upstream name the source writes, without case', () => {
+  const content = 'dns {\n  routing {\n    request {\n      qname(geosite: cn) -> AliDNS # note\n      fallback: Cloudflare\n    }\n  }\n}\n';
+  const source = {id: 'dns', content} as ConfigSource;
+  const listed = dnsRule(4, 'qname(geosite: cn) -> AliDNS', 'upstream', 'alidns');
+  expect(dnsRuleAnchor(source, listed, 'request')).not.toBeNull();
+  expect(dnsRuleAnchor(source, {...listed, upstream: 'googledns'}, 'request')).toBeNull();
+  // A response may requery through the same bare name.
+  expect(dnsRuleAnchor(source, {...listed, action: 'requery', upstream: 'alidns'}, 'request')).not.toBeNull();
+  const fallback = dnsRule(5, 'fallback: Cloudflare', 'upstream', 'cloudflare', 'fallback');
+  expect(dnsRuleAnchor(source, fallback, 'request')).not.toBeNull();
+  expect(dnsRuleAnchor(source, {...fallback, upstream: 'alidns'}, 'request')).toBeNull();
 });

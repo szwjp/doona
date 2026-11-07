@@ -1,0 +1,558 @@
+{
+  "comment": "GET /api/v1/rules and GET /api/v1/dns/rules as the r4 engine reports them for a live configuration, with the source bytes the router served in GET /api/v1/config. The expression is the source text as written, the source names the relative file and its 1-based line, and a must rule reports the outbound without the `must` parameter and `must: true`.",
+  "sources": [
+    {
+      "id": "src_845522dfc34ebacd",
+      "path": "config.d/routing.dae",
+      "kind": "include",
+      "content": "routing {\n# ① 本机进程直连（上游原意：避免绑定 WAN 时连通性检查出现假阴性）：本机实际只有 dnsmasq，NetworkManager / systemd-resolved 为模板保留项\n#pname(NetworkManager, systemd-resolved, dnsmasq) -> must_direct\n\n# ② Cloudflare DoH 上游走代理：对应 DNS 配置里的 https://1.1.1.1/dns-query，固定经代理以保证可用（不依赖该地址直连质量）\ndip(1.1.1.1, 1.0.0.1) && l4proto(tcp) && dport(443) -> proxy(must)\n\n# ③ 组播/保留网段直连：224.0.0.0/3（含 IPv4 组播 224/4 与 240/4 保留段）、ff00::/8（IPv6 组播）——必须排在 ④ 之前，否则 IPv6 组播会被一并阻断\ndip(224.0.0.0/3, 'ff00::/8') -> direct\n\n# ④ 阻断全部 IPv6：避免 v6 绕过分流（br-lan 未下发 v6 前缀、代理节点无 v6 出口；WAN 侧虽有原生 v6 但仅路由器自身可用）\nipversion(6) -> block\n\n# ⑤ 指定设备直连（must_direct，永久绕过代理）：192.168.1.4 box（UU 加速盒，MAC 00:e0:4c:2c:1a:b5）、192.168.1.10 NAS（MAC 78:55:36:07:79:13）——MAC 与 IP 双写\nmac('00:e0:4c:2c:1a:b5') -> must_direct\nmac('78:55:36:07:79:13') -> must_direct\ndip(192.168.1.4) -> must_direct\ndip(192.168.1.10) -> must_direct\n\n# ⑥ 广告拦截：只保留 geosite:category-ads（843 条精选域，官方文档同款写法）——已移除 category-ads-all（19 万条自动生成列表含大量 App 遥测域，实测阻断抖音导致转圈）；上一行为例外：字节系 App 后端域（mcs/日志/配置，非广告投放域）放行\ndomain(suffix: snssdk.com) -> direct\ndomain(geosite:category-ads) -> block\n\n# ⑦ 强制走代理（按域名匹配，依赖 sniffing）：OpenAI / Google / Anthropic / Microsoft 下载——必须排在 ⑧ 之前，否则 download.microsoft.com 这类国内可解析域名会先被 geoip:cn 判成直连\ndomain(geosite:openai) -> proxy\ndomain(geosite:google) -> proxy\ndomain(geosite:anthropic) -> proxy\ndomain(full:download.microsoft.com) -> proxy\n\n# ⑧ Apple 服务直连（中国区）\ndomain(full: time.apple.com, time.asia.apple.com, time.euro.apple.com) -> proxy\ndomain(suffix: apple-cloudkit.com) -> proxy\ndomain(geosite:apple-cn) -> direct\ndomain(suffix: apple.com) -> direct\ndomain(suffix: itunes.apple.com) -> direct\ndomain(suffix: icloud.com) -> direct\n\n# ⑧ 内网 + 国内直连：geoip:private（私有网段）、geoip:cn、geosite:cn\ndip(geoip:private) -> direct\ndip(geoip:cn) -> direct\ndomain(geosite:cn) -> direct\n\n# ⑧.2 国内大厂的国际业务域名直连\ndomain(suffix: tiktokglobalshop.com) -> direct\ndomain(suffix: bdurl.com) -> direct\ndomain(suffix: moto.com) -> direct\ndomain(suffix: trendyol.com) -> direct\n\n# ⑨ BT/PT 高位 UDP 直连：不走代理（不占 VPS 流量），但不断端口，避免误伤游戏语音 / WebRTC / QUIC\nl4proto(udp) && dport(1024-65535) -> direct\n\n# ⑩ 兜底：以上都未命中的流量一律走代理\nfallback: proxy\n}\n",
+      "writable": true
+    },
+    {
+      "id": "src_04ea3cefc8e6df08",
+      "path": "config.d/dns.dae",
+      "kind": "include",
+      "content": "# 由 daed 的 wing.db 转换而来(dns 段原样保留)。\n\ndns {\nipversion_prefer: 4\n\nupstream {\n  alidns: 'udp://192.168.1.1:53'\n  cloudflare: 'udp://192.168.1.1:53'\n}\n\nrouting {\n  request {\n    qtype(naptr) -> reject\n    node(name_regex: \".*\") -> alidns\n    sub(tag_regex: \".*\") -> alidns\n    qname(suffix: snssdk.com, suffix: zijieapi.com, suffix: volces.com, suffix: isnssdk.com, suffix: pstatp.com, suffix: toutiao.com, suffix: byteimg.com, suffix: ixigua.com, suffix: fqnovel.com) -> alidns\n    qname(geosite:cn) -> alidns\n    fallback: cloudflare\n  }\n  response {\n    upstream(cloudflare) -> accept\n    !qname(geosite:cn) && ip(geoip:private) -> cloudflare\n    fallback: accept\n  }\n}\n}\n",
+      "writable": true
+    }
+  ],
+  "rules": {
+    "generation_id": "1",
+    "rules": [
+      {
+        "rule_id": "traffic:0",
+        "index": 0,
+        "expression": "dip(1.1.1.1, 1.0.0.1) && l4proto(tcp) && dport(443) -> proxy(must)",
+        "outbound": "proxy",
+        "must": true,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 6,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:1",
+        "index": 1,
+        "expression": "dip(224.0.0.0/3, 'ff00::/8') -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 9,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:2",
+        "index": 2,
+        "expression": "ipversion(6) -> block",
+        "outbound": "block",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 12,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:3",
+        "index": 3,
+        "expression": "mac('00:e0:4c:2c:1a:b5') -> must_direct",
+        "outbound": "direct",
+        "must": true,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 15,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:4",
+        "index": 4,
+        "expression": "mac('78:55:36:07:79:13') -> must_direct",
+        "outbound": "direct",
+        "must": true,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 16,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:5",
+        "index": 5,
+        "expression": "dip(192.168.1.4) -> must_direct",
+        "outbound": "direct",
+        "must": true,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 17,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:6",
+        "index": 6,
+        "expression": "dip(192.168.1.10) -> must_direct",
+        "outbound": "direct",
+        "must": true,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 18,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:7",
+        "index": 7,
+        "expression": "domain(suffix: snssdk.com) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 21,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:8",
+        "index": 8,
+        "expression": "domain(geosite:category-ads) -> block",
+        "outbound": "block",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 22,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:9",
+        "index": 9,
+        "expression": "domain(geosite:openai) -> proxy",
+        "outbound": "proxy",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 25,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:10",
+        "index": 10,
+        "expression": "domain(geosite:google) -> proxy",
+        "outbound": "proxy",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 26,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:11",
+        "index": 11,
+        "expression": "domain(geosite:anthropic) -> proxy",
+        "outbound": "proxy",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 27,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:12",
+        "index": 12,
+        "expression": "domain(full:download.microsoft.com) -> proxy",
+        "outbound": "proxy",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 28,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:13",
+        "index": 13,
+        "expression": "domain(full: time.apple.com, time.asia.apple.com, time.euro.apple.com) -> proxy",
+        "outbound": "proxy",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 31,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:14",
+        "index": 14,
+        "expression": "domain(suffix: apple-cloudkit.com) -> proxy",
+        "outbound": "proxy",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 32,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:15",
+        "index": 15,
+        "expression": "domain(geosite:apple-cn) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 33,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:16",
+        "index": 16,
+        "expression": "domain(suffix: apple.com) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 34,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:17",
+        "index": 17,
+        "expression": "domain(suffix: itunes.apple.com) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 35,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:18",
+        "index": 18,
+        "expression": "domain(suffix: icloud.com) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 36,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:19",
+        "index": 19,
+        "expression": "dip(geoip:private) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 39,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:20",
+        "index": 20,
+        "expression": "dip(geoip:cn) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 40,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:21",
+        "index": 21,
+        "expression": "domain(geosite:cn) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 41,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:22",
+        "index": 22,
+        "expression": "domain(suffix: tiktokglobalshop.com) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 44,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:23",
+        "index": 23,
+        "expression": "domain(suffix: bdurl.com) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 45,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:24",
+        "index": 24,
+        "expression": "domain(suffix: moto.com) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 46,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:25",
+        "index": 25,
+        "expression": "domain(suffix: trendyol.com) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 47,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:26",
+        "index": 26,
+        "expression": "l4proto(udp) && dport(1024-65535) -> direct",
+        "outbound": "direct",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 50,
+          "column": 1
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "traffic:fallback",
+        "index": 27,
+        "expression": "fallback: proxy",
+        "outbound": "proxy",
+        "must": false,
+        "source": {
+          "file": "config.d/routing.dae",
+          "source_id": "src_845522dfc34ebacd",
+          "line": 53,
+          "column": 1
+        },
+        "kind": "fallback"
+      }
+    ],
+    "fallback": {
+      "outbound": "proxy",
+      "source": {
+        "file": "config.d/routing.dae",
+        "source_id": "src_845522dfc34ebacd",
+        "line": 53,
+        "column": 1
+      }
+    }
+  },
+  "dnsRules": {
+    "generation_id": "1",
+    "request": [
+      {
+        "rule_id": "dns-request:0",
+        "index": 0,
+        "expression": "qtype(naptr) -> reject",
+        "action": "reject",
+        "upstream": null,
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 13,
+          "column": 5
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "dns-request:1",
+        "index": 1,
+        "expression": "node(name_regex: \".*\") -> alidns",
+        "action": "upstream",
+        "upstream": "alidns",
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 14,
+          "column": 5
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "dns-request:2",
+        "index": 2,
+        "expression": "sub(tag_regex: \".*\") -> alidns",
+        "action": "upstream",
+        "upstream": "alidns",
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 15,
+          "column": 5
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "dns-request:3",
+        "index": 3,
+        "expression": "qname(suffix: snssdk.com, suffix: zijieapi.com, suffix: volces.com, suffix: isnssdk.com, suffix: pstatp.com, suffix: toutiao.com, suffix: byteimg.com, suffix: ixigua.com, suffix: fqnovel.com) -> alidns",
+        "action": "upstream",
+        "upstream": "alidns",
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 16,
+          "column": 5
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "dns-request:4",
+        "index": 4,
+        "expression": "qname(geosite:cn) -> alidns",
+        "action": "upstream",
+        "upstream": "alidns",
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 17,
+          "column": 5
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "dns-request:fallback",
+        "index": 5,
+        "expression": "fallback: cloudflare",
+        "action": "upstream",
+        "upstream": "cloudflare",
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 18,
+          "column": 5
+        },
+        "kind": "fallback"
+      }
+    ],
+    "response": [
+      {
+        "rule_id": "dns-response:0",
+        "index": 0,
+        "expression": "upstream(cloudflare) -> accept",
+        "action": "accept",
+        "upstream": null,
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 21,
+          "column": 5
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "dns-response:1",
+        "index": 1,
+        "expression": "!qname(geosite:cn) && ip(geoip:private) -> cloudflare",
+        "action": "requery",
+        "upstream": "cloudflare",
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 22,
+          "column": 5
+        },
+        "kind": "rule"
+      },
+      {
+        "rule_id": "dns-response:fallback",
+        "index": 2,
+        "expression": "fallback: accept",
+        "action": "accept",
+        "upstream": null,
+        "source": {
+          "file": "config.d/dns.dae",
+          "source_id": "src_04ea3cefc8e6df08",
+          "line": 23,
+          "column": 5
+        },
+        "kind": "fallback"
+      }
+    ]
+  }
+}

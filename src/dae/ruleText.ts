@@ -28,6 +28,9 @@ type Placement = {
   target: string;
   // honk resolves DNS upstream names without regard to case, so the list may spell one differently from the source.
   foldCase?: boolean;
+  // The source may spell a must outbound `must_direct` where the list holds the engine's `direct("must")`; both name
+  // the same target and compare as one. Only the comparison is normalized: what an edit writes stays as chosen.
+  mustTarget?: boolean;
   bareInclude?: boolean;
 };
 
@@ -36,6 +39,52 @@ const compact = (value: string) =>
     .tokens.filter(token => token.kind !== 'comment')
     .map(token => value.slice(token.from, token.to))
     .join('');
+
+// The outbound a target names and whether it is `must`, however the source or the engine spells it: `must_direct`,
+// `direct(must)`, `direct("must")` and `direct` are the same target. The engine may report both the parameter and the
+// `must` field, so every marker is dropped instead of one.
+function sameTarget(written: string, target: string, foldCase: boolean): boolean {
+  const normalized = (value: string) => {
+    let name = value;
+    let must = false;
+    // `(must)` as the only parameter, else the `, must` the engine appends after the outbound's own parameters.
+    for (;;) {
+      const only = /^(.*)\((?:must|"must"|'must')\)$/i.exec(name);
+      if (only) {
+        name = only[1];
+        must = true;
+        continue;
+      }
+      const last = /^(.*), ?(?:must|"must"|'must')\)$/i.exec(name);
+      if (last) {
+        name = `${last[1]})`;
+        must = true;
+        continue;
+      }
+      break;
+    }
+    const prefixed = /^must_(.+)$/i.exec(name);
+    if (prefixed) return {name: foldCase ? prefixed[1].toLowerCase() : prefixed[1], must: true};
+    return {name: foldCase ? name.toLowerCase() : name, must};
+  };
+  const left = normalized(written);
+  const right = normalized(target);
+  return left.name === right.name && left.must === right.must;
+}
+
+// What an edit writes after the arrow: `(must)` follows the outbound unless the outbound already spells it, as the
+// engine reports a must rule (`direct("must")`); writing both would not parse.
+const targetText = (outbound: string, must: boolean) =>
+  must && !/^must_/.test(outbound) && !/\((?:must|"must"|'must')\)$/i.test(outbound) ? `${outbound}(must)` : outbound;
+
+// The condition a listed rule's expression shows, without the target it may append: everything before the first
+// top-level arrow, compacted. The expression is the source text as written now, so it may quote a parameter, continue
+// over several lines, or hold an arrow inside a quoted parameter that is not the rule's arrow.
+function listedCondition(expression: string): string {
+  const {tokens} = scanConfig(expression);
+  const arrow = tokens.findIndex(token => token.kind !== 'comment' && token.parens === 0 && expression.slice(token.from, token.to) === '->');
+  return compact(arrow === -1 ? expression : expression.slice(0, tokens[arrow].from));
+}
 
 function anchorAt(source: ConfigSource, rule: Listed, place: Placement, scan?: ReturnType<typeof scanConfig>): RuleAnchor | null {
   if (!rule.source || rule.source.source_id !== source.id) return null;
@@ -60,12 +109,13 @@ function anchorAt(source: ConfigSource, rule: Listed, place: Placement, scan?: R
   const fold = (value: string) => (place.foldCase ? value.toLowerCase() : value);
   const bare = (from: number, to: number) => compact(text.slice(from, to));
   const arrow = fallback ? actual[1] : actual.find(token => token.parens === 0 && text.slice(token.from, token.to) === '->');
+  if (!arrow) return null;
   const target = compact(place.target);
-  if (!arrow || fold(bare(arrow.to, last.to)) !== fold(target)) return null;
-  // The display expression may end with its target, as the contract shows it (`pname(curl) -> direct`), or not.
-  const shown = compact(rule.expression);
-  const condition = fold(shown).endsWith(fold('->' + target)) ? shown.slice(0, -target.length - 2) : shown;
-  if (!fallback && !rule.expression.includes('<redacted>') && bare(first.from, arrow.from) !== condition) return null;
+  const written = bare(arrow.to, last.to);
+  if (place.mustTarget ? !sameTarget(written, target, false) : fold(written) !== fold(target)) return null;
+  // The expression is the source text now, so only the condition before its arrow is compared: the target may be
+  // spelled `must_direct` where the list holds `direct("must")`, and a rule without an arrow shows its condition alone.
+  if (!fallback && !rule.expression.includes('<redacted>') && bare(first.from, arrow.from) !== listedCondition(rule.expression)) return null;
   const from = text.lastIndexOf('\n', first.from - 1) + 1;
   const newline = text.indexOf('\n', last.to);
   const to = newline === -1 ? text.length : newline + 1;
@@ -88,7 +138,8 @@ export function ruleAnchor(source: ConfigSource, rule: RoutingRule, scan?: Retur
       within: blocks => blocks.filter(block => block.name === 'routing'),
       fallbacks: ['fallback'],
       bareInclude: true,
-      target: (rule.outbound ?? '') + (rule.must ? '(must)' : '')
+      mustTarget: true,
+      target: targetText(rule.outbound ?? '', rule.must)
     },
     scan
   );
@@ -163,7 +214,7 @@ export function dnsUpstreams(text: string, scan = scanConfig(text)): Array<{name
 }
 export const dnsUpstreamNames = (text: string, scan = scanConfig(text)): string[] => dnsUpstreams(text, scan).map(upstream => upstream.name);
 
-export const ruleLine = (condition: string, outbound: string, must = false) => `${condition} -> ${outbound}${must ? '(must)' : ''}`;
+export const ruleLine = (condition: string, outbound: string, must = false) => `${condition} -> ${targetText(outbound, must)}`;
 
 export function addRule(text: string, anchor: RuleAnchor, condition: string, outbound: string, must: boolean): string | null {
   return text.slice(anchor.from, anchor.to) === anchor.text
@@ -178,9 +229,8 @@ export function addRule(text: string, anchor: RuleAnchor, condition: string, out
 // Rewrites only the rule's target, so its condition and any comment after it stay as written.
 export function replaceRuleTarget(text: string, anchor: RuleAnchor, outbound: string, must: boolean): string | null {
   if (!anchor.target || text.slice(anchor.from, anchor.to) !== anchor.text) return null;
-  const target = `${outbound}${must ? '(must)' : ''}`;
-  const fold = (value: string) => (anchor.target?.foldCase ? value.toLowerCase() : value);
-  if (fold(compact(text.slice(anchor.target.from, anchor.target.to))) === fold(compact(target))) return text;
+  const target = targetText(outbound, must);
+  if (sameTarget(compact(text.slice(anchor.target.from, anchor.target.to)), compact(target), anchor.target.foldCase === true)) return text;
   return text.slice(0, anchor.target.from) + ` ${target}` + text.slice(anchor.target.to);
 }
 
