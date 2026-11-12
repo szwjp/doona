@@ -12,6 +12,7 @@ import type {DocsAnchor} from './docs';
 import type {MessageKey} from './i18n';
 import {validateContent} from './config';
 import {clearConnection, writeConnection} from './connectionStore';
+import {scanConfig} from '../../../src/dae/text';
 
 export type Connection = {api: Api; capabilities: Capabilities; address: string};
 export class LiteError extends Error {
@@ -140,9 +141,32 @@ export const configSnapshot = (api: Api) => configSnapshots.get(api);
 const mainSnapshots = new WeakMap<Api, ConfigSource>();
 export const mainSnapshot = (api: Api) => mainSnapshots.get(api);
 
-export async function readMain(api: Api, signal?: AbortSignal): Promise<ConfigSource> {
+// The file a page edits: the writable file that holds `section` (the main file first), else the writable main file or
+// the first writable include, else the main file for display. An engine may keep its entry file read-only and every
+// section in an include, as dae's managed layout does.
+export async function readSource(api: Api, section?: string, signal?: AbortSignal): Promise<ConfigSource> {
   const config = await api.config(signal);
-  const source = config.sources.find(item => item.kind === 'main');
+  const authored = config.sources.filter(item => item.kind === 'main' || item.kind === 'include');
+  const writable = authored.filter(item => item.writable);
+  const holds = (item: ConfigSource) => item.content !== undefined && scanConfig(item.content).blocks.some(block => block.name === section);
+  const held = section === undefined ? [] : writable.filter(holds);
+  const source =
+    held.find(item => item.kind === 'main') ??
+    held[0] ??
+    writable.find(item => item.kind === 'main') ??
+    writable[0] ??
+    authored.find(item => item.kind === 'main') ??
+    authored[0];
+  if (!source || source.content === undefined || (await sha256(source.content)) !== source.content_sha256) throw new LiteError('incomplete');
+  configSnapshots.set(api, config);
+  mainSnapshots.set(api, source);
+  return source;
+}
+export const readMain = (api: Api, signal?: AbortSignal) => readSource(api, undefined, signal);
+// The same source after a write, by its id: a section's file need not be the main one.
+async function readSourceById(api: Api, id: string, signal?: AbortSignal): Promise<ConfigSource> {
+  const config = await api.config(signal);
+  const source = config.sources.find(item => item.id === id);
   if (!source || source.content === undefined || (await sha256(source.content)) !== source.content_sha256) throw new LiteError('incomplete');
   configSnapshots.set(api, config);
   mainSnapshots.set(api, source);
@@ -169,7 +193,7 @@ export async function applyContent(connection: Connection, source: ConfigSource,
   const operation = await settle(api, accepted);
   finished(operation, 'reload', {written: true});
   try {
-    const result = await readMain(api);
+    const result = await readSourceById(api, source.id);
     invalidateReads();
     return result;
   } catch {

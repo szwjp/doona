@@ -24,7 +24,7 @@ import * as stylex from '@stylexjs/stylex';
 import {Suspense, lazy, startTransition, useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent} from 'react';
 import type {ConfigSource, Group, GroupSelectionRequest} from '../../../src/api/model';
 import {readGroupEntries, type GroupEntry} from '../../../src/dae/groups';
-import {applyContent, groupProbeSize, groupSnapshot, probeGroup, readGroups, readMain, readProviders, selectMember, type Connection} from './api';
+import {applyContent, groupProbeSize, groupSnapshot, probeGroup, readGroups, readSource, readProviders, selectMember, type Connection} from './api';
 import {canWrite, readNodes, validateContent} from './config';
 import {describeGroupChanges, describeGroupFilters, phraseText} from './describe';
 import {deleteGroup, emptyGroups, groupChanges} from './groupDraft';
@@ -81,7 +81,7 @@ export function Groups({connection, setBusy}: {connection: Connection; setBusy: 
     useCallback(
       async (signal?: AbortSignal) => {
         const [source, nodes, providers, config] = await Promise.all([
-          capabilities.resources.config.available ? readMain(api, signal) : undefined,
+          capabilities.resources.config.available ? readSource(api, 'group', signal) : undefined,
           capabilities.resources.nodes.available ? readNodes(connection, signal) : [],
           capabilities.resources.providers.available ? readProviders(api, signal) : [],
           capabilities.resources.config.available ? api.config(signal) : undefined

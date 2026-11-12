@@ -12,7 +12,7 @@ import {VStack} from '@astryxdesign/core/Layout';
 import {SegmentedControl, SegmentedControlItem} from '@astryxdesign/core/SegmentedControl';
 import {Heading, Text} from '@astryxdesign/core/Text';
 import {dnsUpstreamNames} from '../../../src/dae/ruleText';
-import {applyContent, mainSnapshot, readMain, type Connection} from './api';
+import {applyContent, mainSnapshot, readSource, type Connection} from './api';
 import {canWrite, sectionText, validateContent, writeSection} from './config';
 import {DnsUpstreams} from './DnsUpstreams';
 import {useMessages} from './i18n';
@@ -32,7 +32,7 @@ import {ReviewDialog} from './ui/ReviewDialog';
 const LiteCodeEditor = codeEditorChunk.Component;
 export function Dns({connection, setBusy}: {connection: Connection; setBusy: (busy: boolean) => void}) {
   const t = useMessages();
-  const read = useRead(useCallback((signal?: AbortSignal) => readMain(connection.api, signal), [connection]));
+  const read = useRead(useCallback((signal?: AbortSignal) => readSource(connection.api, 'dns', signal), [connection]));
   const ready = read.data !== undefined;
   const task = useTask(setBusy);
   useNoticeToast(task.notice);

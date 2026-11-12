@@ -34,7 +34,7 @@ import {Text} from '@astryxdesign/core/Text';
 import {TextInput} from '@astryxdesign/core/TextInput';
 import {lazy, Suspense, useCallback, useContext, useEffect, useState} from 'react';
 import type {Node, Provider} from '../../../src/api/model';
-import {LiteError, readMain, readProviders, providerSnapshot, mainSnapshot, refreshProvider, type Connection} from './api';
+import {LiteError, readProviders, readSource, providerSnapshot, mainSnapshot, refreshProvider, type Connection} from './api';
 import {LocaleContext, useMessages} from './i18n';
 import {fetchFailureText} from './fetchFailure';
 import {noticeText, useFocusRefresh, useRead, useTask} from './state';
@@ -70,7 +70,7 @@ export function Subscriptions({connection, setBusy}: {connection: Connection; se
   const locale = useContext(LocaleContext);
   const read = useRead(useCallback((signal?: AbortSignal) => readProviders(api, signal), [api]));
   const config = useRead(
-    useCallback((signal?: AbortSignal) => (capabilities.resources.config.available ? readMain(api, signal) : Promise.resolve(undefined)), [api, capabilities])
+    useCallback((signal?: AbortSignal) => (capabilities.resources.config.available ? readSource(api, 'subscription', signal) : Promise.resolve(undefined)), [api, capabilities])
   );
   const probes = useNodeProbes(connection);
   useProbeUpdates(probes);

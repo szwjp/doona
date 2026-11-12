@@ -17,7 +17,7 @@ import {LoadingText, loadingControl} from './ui/LoadingText';
 import {Heading, Text} from '@astryxdesign/core/Text';
 import {readMode, sameMode, writeMode, type OutboundMode} from '../../../src/dae/outboundMode';
 import {builtinOutbounds} from '../../../src/dae/vocab';
-import {applyContent, mainSnapshot, readMain, type Connection} from './api';
+import {applyContent, mainSnapshot, readSource, type Connection} from './api';
 import {useMessages} from './i18n';
 import {changeCount, parseRuleList, stageAuthoredRules} from './ruleDraft';
 import {RuleTester} from './RuleTester';
@@ -52,7 +52,7 @@ export function Routing({connection, setBusy}: {connection: Connection; setBusy:
   const read = useRead(
     useCallback(
       async (signal?: AbortSignal) => {
-        const [source, groups] = await Promise.all([readMain(api, signal), capabilities.resources.groups.available ? api.groups(signal) : Promise.resolve([])]);
+        const [source, groups] = await Promise.all([readSource(api, 'routing', signal), capabilities.resources.groups.available ? api.groups(signal) : Promise.resolve([])]);
         return {source, groups};
       },
       [api, capabilities]
