@@ -106,7 +106,8 @@ export function SettingsDialog({
   const [candidate, setCandidate] = useState<string | null>(null);
   const read = useRead(
     useCallback(
-      (signal?: AbortSignal) => (isOpen && connection.capabilities.resources.config.available ? readSource(connection.api, 'global', signal) : Promise.resolve(undefined)),
+      (signal?: AbortSignal) =>
+        isOpen && connection.capabilities.resources.config.available ? readSource(connection.api, 'global', signal) : Promise.resolve(undefined),
       [connection, isOpen]
     )
   );

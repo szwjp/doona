@@ -52,7 +52,10 @@ export function Routing({connection, setBusy}: {connection: Connection; setBusy:
   const read = useRead(
     useCallback(
       async (signal?: AbortSignal) => {
-        const [source, groups] = await Promise.all([readSource(api, 'routing', signal), capabilities.resources.groups.available ? api.groups(signal) : Promise.resolve([])]);
+        const [source, groups] = await Promise.all([
+          readSource(api, 'routing', signal),
+          capabilities.resources.groups.available ? api.groups(signal) : Promise.resolve([])
+        ]);
         return {source, groups};
       },
       [api, capabilities]

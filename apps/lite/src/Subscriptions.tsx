@@ -70,7 +70,10 @@ export function Subscriptions({connection, setBusy}: {connection: Connection; se
   const locale = useContext(LocaleContext);
   const read = useRead(useCallback((signal?: AbortSignal) => readProviders(api, signal), [api]));
   const config = useRead(
-    useCallback((signal?: AbortSignal) => (capabilities.resources.config.available ? readSource(api, 'subscription', signal) : Promise.resolve(undefined)), [api, capabilities])
+    useCallback(
+      (signal?: AbortSignal) => (capabilities.resources.config.available ? readSource(api, 'subscription', signal) : Promise.resolve(undefined)),
+      [api, capabilities]
+    )
   );
   const probes = useNodeProbes(connection);
   useProbeUpdates(probes);
