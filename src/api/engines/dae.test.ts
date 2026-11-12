@@ -1,6 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {capabilities} from '../../../mock/fixtures';
-import type {Capabilities} from '../model';
+import {normalizeCapabilities} from '../capabilities';
+import type {Capabilities, ReportedCapabilities} from '../model';
 import {engineOf, type EngineSubject} from '.';
 import {daeGlobal} from './daeSettings';
 import {scanConfig} from '../../dae/text';
@@ -74,6 +75,14 @@ describe('dae', () => {
     };
     expect(dae.reason('config', unmanaged)).toEqual({code: 'layout-unmanaged'});
     expect(dae.reason('global_settings', unmanaged)).toEqual({code: 'layout-unmanaged'});
+  });
+
+  it('calls an absent runtime-settings resource something dae never offers, not a missing build', () => {
+    // dae omits the resource rather than reporting it off; that is still not a build gap.
+    const {runtime_settings: _omitted, ...resources} = capabilities.resources;
+    const without = normalizeCapabilities({...capabilities, resources} as unknown as ReportedCapabilities);
+    expect(without.unreported).toContain('runtime_settings');
+    expect(dae.reason('runtime_settings', without)).toEqual({code: 'no-switch'});
   });
 
   it('explains node edits, services and what dae never switches on', () => {

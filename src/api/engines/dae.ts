@@ -18,6 +18,8 @@ const unlessRunning = (resources: Capabilities['resources']): EngineReason => ({
 
 function reason(subject: EngineSubject, capabilities: Capabilities): EngineReason | undefined {
   const resources = capabilities.resources;
+  // dae never implements runtime settings, so a build that leaves the resource out is not missing a feature.
+  if (subject === 'runtime_settings') return {code: 'no-switch'};
   // A resource an older build leaves out is off because that build does not have it, which is all dae can say.
   if (capabilities.unreported?.includes(subject as keyof Capabilities['resources'])) return lacks;
   switch (subject) {
@@ -66,10 +68,7 @@ function reason(subject: EngineSubject, capabilities: Capabilities): EngineReaso
     // mode on.
     case 'trace_live':
       return {code: 'no-switch'};
-    // dae has no runtime settings resource and no create route: neither is a build gap, just something the engine
-    // never offers.
-    case 'runtime_settings':
-      return {code: 'no-switch'};
+    // dae has no create route: not a build gap, just something the engine never offers.
     // dae has no configuration extension: export, import and revisions are not routes at all.
     case 'export':
     case 'import':
