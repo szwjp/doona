@@ -17,13 +17,16 @@ const other = engineOf({...version, engine: {...version.engine, name: 'other'}})
 const listener = "experimental {\n  native_api { listen: '127.0.0.1:9090'\n    secret: '<redacted>' }\n}";
 
 describe('engineOf', () => {
-  it('knows honk by its engine name and nothing else', () => {
+  it('knows the engines it adapts by their reported names, and no others', () => {
     expect(honk.id).toBe('honk');
     expect(honk.flowDemandGraceSeconds).toBe(60);
+    expect(engineOf({engine: {name: 'dae', version: 'v0.9.0'}}).id).toBe('dae');
     expect(other.flowDemandGraceSeconds).toBeNull();
     expect(other.id).toBe('unknown');
     expect(engineOf(undefined).id).toBe('unknown');
     expect(engineOf({engine: {name: 'constructor', version: '1'}}).id).toBe('unknown');
+    // Names are matched as reported: the extension prefix is lowercase, so a capitalized name is a different engine.
+    expect(engineOf({engine: {name: 'Dae', version: 'v0.9.0'}}).id).toBe('unknown');
   });
 
   it.each([

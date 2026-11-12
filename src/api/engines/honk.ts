@@ -1,8 +1,9 @@
 import {honkGlobal, honkRestartOnly} from './honkSettings';
+import {snippet} from './snippet';
 import {blockFields, scanConfig} from '../../dae/text';
 import {honkConfig} from './honkConfig';
 import type {Capabilities, RuntimeSettings} from '../model';
-import type {Engine, EngineReason, EngineSetting, EngineSubject} from './types';
+import type {Engine, EngineReason, EngineSubject} from './types';
 
 // honk's recorders, each available unless its record_* setting is false; every one defaults to true
 // (honk experimental.rs NativeApiConfig::default).
@@ -136,23 +137,6 @@ function holdsListenerSecret(text: string): boolean {
       )
   );
 }
-// Writes dotted setting names as nested sections; consecutive settings in one section share it.
-function nest(settings: Array<{path: string[]; value: string}>, indent: string): string[] {
-  const lines: string[] = [];
-  for (let i = 0; i < settings.length;) {
-    const [head, ...rest] = settings[i].path;
-    if (!rest.length) {
-      lines.push(`${indent}${head}: ${settings[i++].value}`);
-      continue;
-    }
-    const inner: typeof settings = [];
-    for (; i < settings.length && settings[i].path.length > 1 && settings[i].path[0] === head; i++)
-      inner.push({...settings[i], path: settings[i].path.slice(1)});
-    lines.push(`${indent}${head} {`, ...nest(inner, `${indent}  `), `${indent}}`);
-  }
-  return lines;
-}
-
 export const honk: Engine = {
   id: 'honk',
   nodeLinkSchemes: ['socks5', 'socks4', 'socks4a', 'ss', 'trojan', 'anytls', 'vmess', 'vless', 'hysteria2', 'hysteria', 'hy2', 'tuic', 'juicity'],
@@ -165,11 +149,7 @@ export const honk: Engine = {
   // Reading these back takes a BPF_PROG_QUERY per hook, or a switch into the daens namespace for dae0peer.
   uncheckedHooks: ['cgroup', 'sk_lookup', 'dae0peer'],
   holdsCredentials: source => holdsListenerSecret(source.content),
-  snippet: (settings: EngineSetting[]) =>
-    nest(
-      settings.map(({key, value}) => ({path: key.split('.'), value})),
-      ''
-    ).join('\n'),
+  snippet,
   // honk redacts the native API token when it returns a source, so `experimental { native_api { } }` is not the file's text.
   redactedSections: blocks =>
     blocks
