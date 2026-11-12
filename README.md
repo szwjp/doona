@@ -14,7 +14,7 @@
 
 </div>
 
-doona 是用於監控代理流量、管理節點、群組、規則與組態的靜態 Web 介面。使用時需要正在運作且已啟用原生 API 的 [honk](https://github.com/daeuniverse/honk) 後端；目前不支援 dae。
+doona 是用於監控代理流量、管理節點、群組、規則與組態的靜態 Web 介面。使用時需要正在運作且已啟用原生 API 的 [honk](https://github.com/daeuniverse/honk) 或 [dae](https://github.com/daeuniverse/dae) 後端。
 
 ![顯示流量圖表與狀態卡片的活動頁](https://daeuniverse.org/doona/screenshots/zh-TW/activity-light.webp)
 
@@ -86,7 +86,7 @@ doona 是用於監控代理流量、管理節點、群組、規則與組態的�
 
 ## 兩個版本
 
-在 0.1.0-rc.6 中，doona lite 是仍在測試的預覽版，頁面與行為可能繼續變動。兩者連線同一個 honk，使用相同的管理員憑證。
+在 0.1.0-rc.6 中，doona lite 是仍在測試的預覽版，頁面與行為可能繼續變動。兩者連線同一個後端，使用相同的管理員憑證。
 
 | 項目       | 標準版                             | doona lite（預覽版）     |
 | ---------- | ---------------------------------- | ------------------------ |
@@ -112,11 +112,11 @@ doona 是用於監控代理流量、管理節點、群組、規則與組態的�
 
 ## 安裝
 
-honk 的完整發布版本已內嵌 doona。依照[快速入門](https://daeuniverse.org/zh-TW/doona/quick-start)即可使用；文件也說明如何單獨安裝 doona。Debian、Ubuntu、Fedora 與 openSUSE 可從 daeuniverse 套件來源安裝：Debian 與 Ubuntu 用 `doona-web`，Fedora 與 openSUSE 用 `doona`，套件來源的設定見 [Debian](https://daeuniverse.org/zh-TW/guide/packages/debian)、[Fedora](https://daeuniverse.org/zh-TW/guide/packages/fedora) 與 [openSUSE](https://daeuniverse.org/zh-TW/guide/packages/opensuse)。發布封存檔與套件仍可從 GitHub Releases 取得。
+honk 的完整發布版本已內嵌 doona，dae 也可以託管它：把 `api.ui` 指向建置產物所在目錄，面板即在 `/ui/` 開啟，API 呼叫仍需 token。依照[快速入門](https://daeuniverse.org/zh-TW/doona/quick-start)即可使用；文件也說明如何單獨安裝 doona。Debian、Ubuntu、Fedora 與 openSUSE 可從 daeuniverse 套件來源安裝：Debian 與 Ubuntu 用 `doona-web`，Fedora 與 openSUSE 用 `doona`，套件來源的設定見 [Debian](https://daeuniverse.org/zh-TW/guide/packages/debian)、[Fedora](https://daeuniverse.org/zh-TW/guide/packages/fedora) 與 [openSUSE](https://daeuniverse.org/zh-TW/guide/packages/opensuse)。發布封存檔與套件仍可從 GitHub Releases 取得。
 
 ## 後端協定
 
-honk 負責代理流量；支援的協定、傳輸方式與限制見 [honk 節點參考](https://github.com/daeuniverse/honk/blob/main/doc/zh/reference/nodes.md#协议)。
+引擎負責代理流量；支援的協定、傳輸方式與限制見 [honk 節點參考](https://github.com/daeuniverse/honk/blob/main/doc/zh/reference/nodes.md#协议) 或 [dae 代理協定](https://github.com/daeuniverse/dae/blob/main/docs/zh/proxy-protocols.md)。
 
 ## 最新版本
 
@@ -142,7 +142,7 @@ lite 的獨立相依套件安裝與建置指令見[開發](https://daeuniverse.o
 
 ## 支援
 
-介面問題與提問請到 [doona issues](https://github.com/Zakkaus/doona/issues)。代理、分流、DNS 等引擎問題請提交至 [honk issues](https://github.com/daeuniverse/honk/issues)。通報安全漏洞的方式見 [SECURITY.md](.github/SECURITY.md)。
+介面問題與提問請到 [doona issues](https://github.com/Zakkaus/doona/issues)。代理、分流、DNS 等引擎問題請提交至 [honk issues](https://github.com/daeuniverse/honk/issues) 或 [dae issues](https://github.com/daeuniverse/dae/issues)。通報安全漏洞的方式見 [SECURITY.md](.github/SECURITY.md)。
 
 ## 授權與致謝
 
