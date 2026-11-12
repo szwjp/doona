@@ -128,7 +128,7 @@ describe('backendLimits', () => {
   it('counts in the headline only what the build lacks', () => {
     const mixed = group(limits(patched({config_validate: {modes: ['syntax']}, events: {available: false}})), 'notProvided');
     expect(ids(mixed)).toEqual(['validate_full', 'events']);
-    expect(mixed).toMatchObject({headline: 'This honk build lacks 1 feature', features: 'Full validation, Events'});
+    expect(mixed).toMatchObject({headline: 'This build lacks 1 feature', features: 'Full validation, Events'});
   });
 
   it('explains a configuration that is not loaded once for everything that needs it', () => {
@@ -165,7 +165,7 @@ describe('backendLimits', () => {
   });
 
   it('gives a read-only configuration the write key and the docs, and only the headline elsewhere', () => {
-    const readOnly = patched({config: {writable: false}, providers: {can_manage: false}});
+    const readOnly = patched({config: {writable: false}, nodes: {can_manage: false}});
     const [configGroup] = limits(readOnly);
     expect(configGroup).toMatchObject({
       cause: 'configReadOnly',
@@ -178,6 +178,8 @@ describe('backendLimits', () => {
     });
     expect(ids(configGroup)).toEqual(['config', 'manage', 'global_settings', 'mode', 'rule_edit']);
     expect(ids(limits(patched({config: {writable: undefined}}))[0])).toEqual(['config', 'global_settings', 'mode', 'rule_edit']);
+    // A backend that never creates subscription providers still edits nodes, so that alone is no banner.
+    expect(ids(limits(patched({config: {writable: false}, providers: {can_manage: false}}))[0])).toEqual(['config', 'global_settings', 'mode', 'rule_edit']);
     expect(limits(readOnly, other)[0].help).toBeUndefined();
     expect(backendLimits(readOnly, undefined, t, 'en')[0].help).toBeUndefined();
   });
@@ -244,7 +246,7 @@ describe('backendLimits', () => {
     expect(groups).toEqual([
       {
         cause: 'notProvided',
-        headline: 'This honk build lacks 1 feature',
+        headline: 'This build lacks 1 feature',
         features: t('nav.events'),
         link: {href: docsHref('en', 'honk-version'), text: t('ov.lim.docsVersion'), external: true},
         items: [{id: 'events', label: t('nav.events')}]
