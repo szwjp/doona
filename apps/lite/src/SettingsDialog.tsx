@@ -311,7 +311,8 @@ export function SettingsDialog({
                       <RowEntrance key={active}>
                         <VStack as="ul" role="list" gap={0}>
                           {list.map((field, index) => {
-                            const label = t[`setting_${field.key}` as MessageKey];
+                            // A field a newer engine adds before this build's catalogue names it shows its own key.
+                            const label = t[`setting_${field.key}` as MessageKey] || field.key;
                             const help = guidance[`settingsGuide_${field.key}` as keyof typeof guidance];
                             const value = patch[field.key] ?? settingValue(field, fields.find(f => f.name === field.key)?.value ?? '');
                             const options = field.type === 'boolean' ? ['true', 'false'] : field.choices;
