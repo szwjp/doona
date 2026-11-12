@@ -1123,10 +1123,7 @@
   "ov.lim.h.geodataUnreadable": "地理数据无法使用",
   "ov.lim.h.geodataUpdate": "无法更新地理数据",
   "ov.lim.h.mainReadOnly": "无法编辑节点与节点来源",
-  "ov.lim.h.notProvided": {
-    "one": "此构建缺少 {n} 项功能",
-    "other": "此构建缺少 {n} 项功能"
-  },
+  "ov.lim.h.notProvided": "此构建缺少 {n} 项功能",
   "ov.lim.h.notProvidedOther": "后端未提供 {n} 项功能",
   "ov.lim.h.notRunning": "{n} 项服务暂时无法使用",
   "ov.lim.h.probes": "延迟探测暂时未运行",
