@@ -22,7 +22,7 @@ test('backend actions run on their owning pages', async ({page}) => {
   await expect(page.locator('.rp-toast', {hasText: /Closed \d+, skipped \d+/})).toBeVisible();
   await page.goto('/#/overview?card=status');
   await page.locator('#overview-status').getByRole('button', {name: 'Reload', exact: true}).click();
-  await page.getByRole('dialog', {name: 'Reload honk?'}).getByRole('button', {name: 'Reload honk', exact: true}).click();
+  await page.getByRole('dialog', {name: 'Reload engine?'}).getByRole('button', {name: 'Reload engine', exact: true}).click();
   await expect(page.locator('.rp-toast.positive', {hasText: 'Reload: Completed'})).toBeVisible();
 });
 

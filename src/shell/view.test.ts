@@ -108,10 +108,10 @@ it('puts every page in exactly one hub and shows the hubs as the navigation sect
 it('splits the top bar into apply for held rules and reload for honk', () => {
   const none = {count: 0, label: '', busy: false};
   const two = {count: 2, label: t('rule.applyPending', {n: 2}), busy: false};
-  expect(topBarCommands(none, true, false, t)).toEqual({apply: null, reload: {label: 'Reload honk', busy: false, blocked: false}});
+  expect(topBarCommands(none, true, false, t)).toEqual({apply: null, reload: {label: 'Reload engine', busy: false, blocked: false}});
   expect(topBarCommands(two, true, false, t)).toEqual({
     apply: {label: 'Apply 2 rules', count: 2, busy: false, blocked: false},
-    reload: {label: 'Reload honk', busy: false, blocked: false}
+    reload: {label: 'Reload engine', busy: false, blocked: false}
   });
   expect(topBarCommands(two, false, false, t)).toEqual({apply: {label: 'Apply 2 rules', count: 2, busy: false, blocked: false}, reload: null});
   expect(topBarCommands(none, false, false, t)).toEqual({apply: null, reload: null});

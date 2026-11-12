@@ -140,7 +140,7 @@ test('language, theme and palette are each two taps away in the overflow menu', 
   await expect(top.getByRole('button', {name: 'Search'})).toBeVisible();
   await expect(top.getByRole('button', {name: 'Refresh'})).toBeVisible();
   // Reload lives in the overflow menu on a phone, beside the backend entry.
-  await expect(top.getByRole('button', {name: 'Reload honk'})).toBeHidden();
+  await expect(top.getByRole('button', {name: 'Reload engine'})).toBeHidden();
   for (const name of ['Language', 'Palette']) await expect(top.getByRole('button', {name, exact: true})).toBeHidden();
   const more = top.getByRole('button', {name: 'More options'});
   const report = top.getByRole('link', {name: 'Report a problem', exact: true});
@@ -148,13 +148,13 @@ test('language, theme and palette are each two taps away in the overflow menu', 
   const [moreRect, reportRect, firstRect] = [await box(more), await box(report), await box(top.locator('.rp-actions button:visible').first())];
   expect(moreRect.x + moreRect.width).toBeGreaterThan((await box(top)).width - 24);
   expect(reportRect.x + reportRect.width).toBeLessThanOrEqual(firstRect.x);
-  // The menu is three short rows, each naming its current value, then Reload honk and the Backend row; a row opens its
+  // The menu is three short rows, each naming its current value, then Reload engine and the Backend row; a row opens its
   // choices in the same popover.
   await more.click();
-  await expect(page.getByRole('menuitem')).toHaveText(['LanguageEnglish', 'ThemeLight', 'PaletteRosé Pine Moon', 'Reload honk', 'Backend']);
+  await expect(page.getByRole('menuitem')).toHaveText(['LanguageEnglish', 'ThemeLight', 'PaletteRosé Pine Moon', 'Reload engine', 'Backend']);
   // Reload from the menu still asks first.
-  await page.getByRole('menuitem', {name: 'Reload honk'}).click();
-  const confirm = page.getByRole('dialog', {name: 'Reload honk?'});
+  await page.getByRole('menuitem', {name: 'Reload engine'}).click();
+  const confirm = page.getByRole('dialog', {name: 'Reload engine?'});
   await confirm.getByRole('button', {name: 'Cancel', exact: true}).click();
   await expect(confirm).toHaveCount(0);
   const pick = async (row: string, item: string) => {

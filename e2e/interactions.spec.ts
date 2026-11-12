@@ -326,9 +326,9 @@ test('top bar reload explains why it is pending', async ({page}) => {
     return api.startReload();
   };
   await page.goto('/#/activity');
-  const reload = page.locator('header').getByRole('button', {name: 'Reload honk', exact: true});
+  const reload = page.locator('header').getByRole('button', {name: 'Reload engine', exact: true});
   await reload.click();
-  await page.getByRole('dialog', {name: 'Reload honk?'}).getByRole('button', {name: 'Reload honk', exact: true}).click();
+  await page.getByRole('dialog', {name: 'Reload engine?'}).getByRole('button', {name: 'Reload engine', exact: true}).click();
   try {
     await expect(reload).toHaveAttribute('data-pending');
     await reload.hover();

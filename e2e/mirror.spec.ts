@@ -118,9 +118,9 @@ test.describe('mirrored layout at 390px', () => {
     await expect(menu).toBeVisible();
     await expect(page.locator('.rp-popover').filter({has: menu})).toHaveAttribute('dir', 'rtl');
     const rows = page.locator('.rp-subitem');
-    // Three submenu rows, then Reload honk and Backend, which open a dialog and a popover and have no chevron.
+    // Three submenu rows, then Reload engine and Backend, which open a dialog and a popover and have no chevron.
     await expect(rows).toHaveCount(5);
-    await expect(menu.getByRole('menuitem')).toHaveText(['LanguageEnglish', 'ThemeLight', 'PaletteRosé Pine Moon', 'Reload honk', 'Backend']);
+    await expect(menu.getByRole('menuitem')).toHaveText(['LanguageEnglish', 'ThemeLight', 'PaletteRosé Pine Moon', 'Reload engine', 'Backend']);
     for (const row of await rows.all()) {
       const {x, width} = await box(row);
       expect(x).toBeGreaterThanOrEqual(0);

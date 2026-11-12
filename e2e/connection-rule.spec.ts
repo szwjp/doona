@@ -154,7 +154,7 @@ test('held rules wait for one apply from the top bar, which writes them in one r
   await expect(held).toContainText('domain(full: api.telegram.org) -> proxy');
   await expect(held).toContainText('domain(full: cdn.bilibili.com) -> direct');
   await apply.click();
-  await expect(page.getByRole('dialog', {name: 'Reload honk?'})).toHaveCount(0);
+  await expect(page.getByRole('dialog', {name: 'Reload engine?'})).toHaveCount(0);
   await expect(page.locator('.rp-toast.positive', {hasText: '2 rules are in effect'})).toBeVisible();
   const writes = requests.filter(request => request.method() === 'PUT');
   expect(writes).toHaveLength(1);
@@ -162,7 +162,7 @@ test('held rules wait for one apply from the top bar, which writes them in one r
   expect(content).toContain('domain(full: api.telegram.org) -> proxy');
   expect(content).toContain('domain(full: cdn.bilibili.com) -> direct');
   await expect(held).toHaveCount(0);
-  await expect(top(page).getByRole('button', {name: 'Reload honk', exact: true})).toBeVisible();
+  await expect(top(page).getByRole('button', {name: 'Reload engine', exact: true})).toBeVisible();
   await expect(top(page).locator('.rp-held-count')).toHaveCount(0);
 });
 
@@ -184,7 +184,7 @@ test('a refused apply keeps the held rules and shows the diagnostics in the rule
   expect(requests.filter(request => request.method() === 'PUT')).toHaveLength(0);
   await held.getByRole('button', {name: 'Discard held rule', exact: true}).click();
   await expect(held).toHaveCount(0);
-  await expect(top(page).getByRole('button', {name: 'Reload honk', exact: true})).toBeVisible();
+  await expect(top(page).getByRole('button', {name: 'Reload engine', exact: true})).toBeVisible();
 });
 
 test('the held toast opens the held rules, which apply from their own section', async ({page}) => {
@@ -217,11 +217,11 @@ test('refresh re-reads the data and writes nothing, even with rules held', async
 test('reload asks for confirmation, then reloads the engine and reports the operation', async ({page}) => {
   const {requests} = await mockBackend(page);
   await page.goto('/#/connections');
-  await top(page).getByRole('button', {name: 'Reload honk', exact: true}).click();
-  const dialog = page.getByRole('dialog', {name: 'Reload honk?'});
+  await top(page).getByRole('button', {name: 'Reload engine', exact: true}).click();
+  const dialog = page.getByRole('dialog', {name: 'Reload engine?'});
   await expect(dialog).toContainText('Held rules are not written.');
   expect(requests.filter(request => request.method() !== 'GET')).toHaveLength(0);
-  await dialog.getByRole('button', {name: 'Reload honk', exact: true}).click();
+  await dialog.getByRole('button', {name: 'Reload engine', exact: true}).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.locator('.rp-toast.positive', {hasText: 'Reload'})).toBeVisible();
   expect(requests.filter(request => request.method() !== 'GET').map(request => new URL(request.url()).pathname)).toEqual([expect.stringMatching(/reload$/)]);
@@ -230,8 +230,8 @@ test('reload asks for confirmation, then reloads the engine and reports the oper
 test('cancelling the reload confirmation reloads nothing', async ({page}) => {
   const {requests} = await mockBackend(page);
   await page.goto('/#/connections');
-  await top(page).getByRole('button', {name: 'Reload honk', exact: true}).click();
-  const dialog = page.getByRole('dialog', {name: 'Reload honk?'});
+  await top(page).getByRole('button', {name: 'Reload engine', exact: true}).click();
+  const dialog = page.getByRole('dialog', {name: 'Reload engine?'});
   await dialog.getByRole('button', {name: 'Cancel', exact: true}).click();
   await expect(dialog).toHaveCount(0);
   await page.goto('/#/rules?tab=list&view=advanced');
@@ -242,8 +242,8 @@ test('cancelling the reload confirmation reloads nothing', async ({page}) => {
 test('reload with rules held reloads only and keeps them held', async ({page}) => {
   const {requests} = await mockBackend(page);
   await hold(page, '1');
-  await top(page).getByRole('button', {name: 'Reload honk', exact: true}).click();
-  await page.getByRole('dialog', {name: 'Reload honk?'}).getByRole('button', {name: 'Reload honk', exact: true}).click();
+  await top(page).getByRole('button', {name: 'Reload engine', exact: true}).click();
+  await page.getByRole('dialog', {name: 'Reload engine?'}).getByRole('button', {name: 'Reload engine', exact: true}).click();
   await expect(page.locator('.rp-toast.positive', {hasText: 'Reload'})).toBeVisible();
   expect(requests.filter(request => request.method() !== 'GET').map(request => new URL(request.url()).pathname)).toEqual([expect.stringMatching(/reload$/)]);
   await expect(top(page).getByRole('button', {name: 'Apply 1 rule', exact: true}).locator('.rp-held-count')).toHaveText('1');
@@ -255,7 +255,7 @@ test('the reload arrows turn once a second, like an indeterminate progress circl
   await mockBackend(page);
   await page.emulateMedia({reducedMotion: 'no-preference'});
   await page.goto('/#/connections');
-  const reload = top(page).getByRole('button', {name: 'Reload honk', exact: true});
+  const reload = top(page).getByRole('button', {name: 'Reload engine', exact: true});
   const timing = () =>
     reload.evaluate(button =>
       button
@@ -263,7 +263,7 @@ test('the reload arrows turn once a second, like an indeterminate progress circl
         .getAnimations()
         .map(animation => animation.effect!.getTiming().duration)
     );
-  const cancel = page.getByRole('dialog', {name: 'Reload honk?'}).getByRole('button', {name: 'Cancel', exact: true});
+  const cancel = page.getByRole('dialog', {name: 'Reload engine?'}).getByRole('button', {name: 'Cancel', exact: true});
   await reload.click();
   expect(await timing()).toEqual([1000]);
   await cancel.click();

@@ -163,9 +163,9 @@ test.describe('right to left at 390px', () => {
 
     await page.locator('.rp-top').getByRole('button', {name: 'More options'}).click();
     const rows = page.locator('.rp-subitem');
-    // Three submenu rows, then Reload honk and Backend, which open a dialog and a popover and have no chevron.
+    // Three submenu rows, then Reload engine and Backend, which open a dialog and a popover and have no chevron.
     await expect(rows).toHaveCount(5);
-    await expect(page.getByRole('menuitem')).toHaveText(['LanguageEnglish', 'ThemeLight', 'PaletteRosé Pine Moon', 'Reload honk', 'Backend']);
+    await expect(page.getByRole('menuitem')).toHaveText(['LanguageEnglish', 'ThemeLight', 'PaletteRosé Pine Moon', 'Reload engine', 'Backend']);
     for (const row of await rows.all()) {
       const {x, width} = await box(row);
       expect(x).toBeGreaterThanOrEqual(0);
