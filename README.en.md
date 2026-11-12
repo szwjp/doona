@@ -14,7 +14,7 @@
 
 </div>
 
-doona is a static web UI for monitoring proxy traffic and managing nodes, groups, rules and configuration. It requires a running [honk](https://github.com/daeuniverse/honk) backend with the native API enabled; dae is not supported yet.
+doona is a static web UI for monitoring proxy traffic and managing nodes, groups, rules and configuration. It requires a running [honk](https://github.com/daeuniverse/honk) or [dae](https://github.com/daeuniverse/dae) backend with the native API enabled.
 
 ![Activity dashboard with traffic charts and status cards](https://daeuniverse.org/doona/screenshots/en/activity-light.webp)
 
@@ -86,7 +86,7 @@ Available features depend on the backend’s capabilities and configuration; see
 
 ## Two editions
 
-doona lite is a preview in testing in 0.1.0-rc.6; its pages and behaviour may change. Both editions connect to the same honk with the same administrator credentials.
+doona lite is a preview in testing in 0.1.0-rc.6; its pages and behaviour may change. Both editions connect to the same backend with the same administrator credentials.
 
 | Area               | Standard edition                                          | doona lite (preview)                               |
 | ------------------ | --------------------------------------------------------- | -------------------------------------------------- |
@@ -112,11 +112,11 @@ To see error states, use [`?scenario=faults`](https://demo.daeuniverse.org/?scen
 
 ## Install
 
-honk's full releases already embed doona. Follow the [quick start](https://daeuniverse.org/doona/quick-start) to use it; the documentation also covers installing doona separately. On Debian, Ubuntu, Fedora and openSUSE, install it from the daeuniverse package repository: `doona-web` on Debian and Ubuntu, `doona` on Fedora and openSUSE, with the repository set up as described for [Debian](https://daeuniverse.org/guide/packages/debian), [Fedora](https://daeuniverse.org/guide/packages/fedora) and [openSUSE](https://daeuniverse.org/guide/packages/opensuse). The release archives and packages stay available from the GitHub releases.
+honk's full releases already embed doona, and dae can serve it too: point `api.ui` at the directory that holds the built app and the panel opens at `/ui/`, while API calls still need the token. Follow the [quick start](https://daeuniverse.org/doona/quick-start) to use it; the documentation also covers installing doona separately. Editing the configuration over the API needs `api.config_write` and its managed directory layout (`config.dae` including `config.d/*.dae` and `api.dae`). On Debian, Ubuntu, Fedora and openSUSE, install it from the daeuniverse package repository: `doona-web` on Debian and Ubuntu, `doona` on Fedora and openSUSE, with the repository set up as described for [Debian](https://daeuniverse.org/guide/packages/debian), [Fedora](https://daeuniverse.org/guide/packages/fedora) and [openSUSE](https://daeuniverse.org/guide/packages/opensuse). The release archives and packages stay available from the GitHub releases.
 
 ## Backend protocols
 
-honk handles proxying; see the [honk node reference](https://github.com/daeuniverse/honk/blob/main/doc/en/reference/nodes.md#protocols) for supported protocols, transports and limits.
+The engine handles proxying; see the [honk node reference](https://github.com/daeuniverse/honk/blob/main/doc/en/reference/nodes.md#protocols) or [dae's proxy protocols](https://github.com/daeuniverse/dae/blob/main/docs/en/proxy-protocols.md) for supported protocols, transports and limits.
 
 ## Latest release
 
@@ -142,7 +142,7 @@ For lite’s separate dependency install and build commands, see [Development](h
 
 ## Support
 
-Report interface problems and ask questions in [doona issues](https://github.com/Zakkaus/doona/issues). Report proxy, routing, DNS and other engine problems in [honk issues](https://github.com/daeuniverse/honk/issues). See [SECURITY.md](.github/SECURITY.md) for reporting a vulnerability.
+Report interface problems and ask questions in [doona issues](https://github.com/Zakkaus/doona/issues). Report proxy, routing, DNS and other engine problems in [honk issues](https://github.com/daeuniverse/honk/issues) or [dae issues](https://github.com/daeuniverse/dae/issues). See [SECURITY.md](.github/SECURITY.md) for reporting a vulnerability.
 
 ## License and credits
 
