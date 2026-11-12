@@ -79,6 +79,7 @@ export type LimitHint = {text: string; setting?: string; link: LimitLink};
 export const reasonHelp: Partial<Record<EngineReason['code'], {text: Key; docs?: [DocsAnchor, Key]}>> = {
   'config-unloaded': {text: 'ov.lim.configMissing'},
   'writes-off': {text: 'ov.lim.configWrite', docs: ['read-only', 'ov.lim.docsReadOnly']},
+  'layout-unmanaged': {text: 'ov.lim.layoutUnmanaged', docs: ['read-only', 'ov.lim.docsReadOnly']},
   'main-file-read-only': {text: 'ov.lim.mainReadOnly', docs: ['read-only', 'ov.lim.docsReadOnly']},
   'recorder-off': {text: 'ov.lim.recordOff'},
   'recorded-on-demand': {text: 'ov.lim.flowsIdle'},

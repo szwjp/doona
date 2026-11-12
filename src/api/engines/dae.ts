@@ -8,6 +8,11 @@ import type {Engine, EngineReason, EngineSubject} from './types';
 const api = (key: string) => `api.${key}`;
 const lacks: EngineReason = {code: 'build-lacks'};
 const writeSwitch = {key: api('config_write'), value: 'true'};
+// dae reports its own facts inside the config resource: the layout it needs for writes, the sources it hides and the
+// store it keeps them in (component/nativeapi/handlers.go).
+type DaeConfig = {layout?: {kind?: string; reason?: string}; hidden_sources?: string[]; store?: {kind?: string}};
+const extension = (capabilities: Capabilities): DaeConfig | undefined =>
+  (capabilities.resources.config as unknown as Record<string, unknown>)['x-dae'] as DaeConfig | undefined;
 // dae config.rs running: the loaded sources and the engine's command channel.
 const unlessRunning = (resources: Capabilities['resources']): EngineReason => ({code: resources.config.available ? 'starting-or-stopping' : 'config-unloaded'});
 
@@ -18,9 +23,14 @@ function reason(subject: EngineSubject, capabilities: Capabilities): EngineReaso
   switch (subject) {
     // dae cmd/config_editor.go: sources load with the running generation, and writes need api.config_write and the
     // managed layout (config.dae includes config.d/*.dae and api.dae).
-    case 'config':
+    case 'config': {
       if (!resources.config.available) return {code: 'config-unloaded'};
-      return resources.config.writable === false ? {code: 'writes-off', settings: [writeSwitch]} : undefined;
+      if (resources.config.writable !== false) return undefined;
+      // The API switch takes precedence in dae's own reason: the layout is only reported when writes are on.
+      return extension(capabilities)?.layout?.reason === 'layout_unmanaged'
+        ? {code: 'layout-unmanaged'}
+        : {code: 'writes-off', settings: [writeSwitch]};
+    }
     // Creating sources, the forms, the rule and group editors and activating a revision all write the configuration
     // (config_editor.go: create is false, config_patch follows the same switch).
     case 'create':

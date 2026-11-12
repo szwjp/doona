@@ -87,6 +87,10 @@ const configurationRefusals = new Set(['permission_denied', 'capability_not_supp
 
 const refusalReasons: Record<string, Key> = {
   configuration_unavailable: 'ui.refusal.configurationUnavailable',
+  // dae cmd/config_editor.go: the entry file is never written, and a directory outside the managed layout refuses
+  // every write.
+  entry_source: 'ui.refusal.entrySource',
+  layout_unmanaged: 'ui.refusal.layoutUnmanaged',
   credential_sources_changed: 'ui.refusal.credentialSourcesChanged',
   import_entry_changed: 'ui.refusal.importEntryChanged',
   listener_secret_in_content: 'ui.refusal.listenerSecretInContent',
