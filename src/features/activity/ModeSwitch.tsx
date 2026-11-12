@@ -62,8 +62,10 @@ export function ModeApply({model: vm}: {model: Pick<ModeCardsModel, 'mode' | 'mo
 export function ModeSwitch({model: vm, fill}: {model: ModeCardsModel; fill?: boolean}) {
   const t = useT();
   useEffect(() => {
-    if (vm.readOnly) preloadHint();
-  }, [vm.readOnly]);
+    // Before the configuration is read the mode is unknown and the card only waits, so the read-only text is not
+    // needed yet; loading it there would fetch a page's messages for a state that lasts one poll.
+    if (vm.readOnly && vm.mode) preloadHint();
+  }, [vm.readOnly, vm.mode]);
   return (
     <span className="rp-cluster">
       <Segmented label={t('act.mode')} value={vm.mode} onChange={vm.pick} isDisabled={vm.busy || !vm.writable} items={vm.modes} fill={fill} />
