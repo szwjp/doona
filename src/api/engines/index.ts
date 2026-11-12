@@ -8,6 +8,7 @@ export type {Engine, EngineAction, EngineConfig, EngineReason, EngineSubject} fr
 // An engine doona has no knowledge of: the contract's own facts are all the page can give.
 const unknown: Engine = {
   id: 'unknown',
+  dialect: null,
   reason: () => undefined,
   holdsCredentials: () => false,
   snippet: settings => settings.map(({key, value}) => `${key}: ${value}`).join('\n'),

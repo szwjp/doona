@@ -139,6 +139,7 @@ function holdsListenerSecret(text: string): boolean {
 }
 export const honk: Engine = {
   id: 'honk',
+  dialect: 'honk',
   nodeLinkSchemes: ['socks5', 'socks4', 'socks4a', 'ss', 'trojan', 'anytls', 'vmess', 'vless', 'hysteria2', 'hysteria', 'hy2', 'tuic', 'juicity'],
   flowDemandGraceSeconds: 60,
   globalSettings: honkGlobal,

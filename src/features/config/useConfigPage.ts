@@ -228,7 +228,12 @@ export function useSourceCard({
   const text = draft?.text ?? source.content ?? '';
   // Names to complete after "->": the groups and DNS upstreams of every source, this one as edited.
   const edited = {id: source.id, content: text};
-  const names = () => ({groups: allGroupNames(sources, edited), upstreams: allUpstreamNames(sources, edited)});
+  // The editor completes the vocabulary of the engine that will read the text.
+  const names = () => ({
+    groups: allGroupNames(sources, edited),
+    upstreams: allUpstreamNames(sources, edited),
+    dialect: engine.dialect ?? ('honk' as const)
+  });
   // A line the card moves the editor to; the key makes a second request for the same line move it again.
   const [jump, setJump] = useState<{line: number; key: number} | null>(null);
   const jumps = useRef(0);

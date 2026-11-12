@@ -18,7 +18,6 @@ import {
 import {LabeledSelect} from '../../../ui/Picker';
 import {SearchSelect} from '../../../ui/SearchSelect';
 import type {GroupDialogView} from './useGroupDialog';
-import {policyChoices} from '../../shared/policyText';
 import {BackendText} from '../../shared/BackendText';
 import {FilterSummary} from './FilterSummary';
 type PolicyDetails = {
@@ -50,7 +49,7 @@ function Details({details: d}: {details: PolicyDetails}) {
 export function GroupDialog({model: m, details}: {model: GroupDialogView; details: PolicyDetails | null}) {
   const t = useT();
   const form = useId();
-  const policy = policyChoices(m.policy, t);
+  const policy = m.policyChoices;
   return (
     <>
       <ModalDialog

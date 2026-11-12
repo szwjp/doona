@@ -1,4 +1,5 @@
 import type {SettingsSection} from '../../dae/settings';
+import type {Dialect} from '../../dae/vocab';
 import type {TextBlock} from '../../dae/text';
 import type {Capabilities, ConfigRevisionList, ConfigSource, EffectiveConfig, OperationAccepted, RuntimeSettings} from '../model';
 
@@ -106,6 +107,9 @@ export type EngineConfig = {
 // reason says nothing, so the page falls back to what the contract says.
 export type Engine = {
   id: 'honk' | 'dae' | 'unknown';
+  // The dae text dialect the engine reads, which picks the vocabulary the editor completes and the policies the
+  // group picker offers; null when the engine is unknown.
+  dialect: Dialect | null;
   // Seconds the engine keeps recording flow demand after the last client read or stream; null when it does not say.
   flowDemandGraceSeconds: number | null;
   // Why `subject` is off, given that the capabilities show it is; undefined when the engine does not say.

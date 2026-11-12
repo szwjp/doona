@@ -36,8 +36,10 @@ import type {ConfigSource, Group, Node} from '../../../api/model';
 import {toast, type Problem} from '../../../ui/ui';
 import {useDialogSession, useDraftGuard} from '../../../shell/draft';
 import {LocalError, noticeText} from '../../../api/error';
-import {groupEditSafe, groupNameError, manualPolicy} from '../../shared/policyText';
-import {newGroupPolicies} from '../../../dae/vocab';
+import {groupEditSafe, groupNameError, manualPolicy, policyChoices} from '../../shared/policyText';
+import {newGroupPolicies, type Dialect} from '../../../dae/vocab';
+import {engineOf} from '../../../api/engines';
+import {useVersion} from '../../../store';
 import type {SearchSection} from '../../../ui/SearchSelect';
 import type {CheckboxChoice} from '../../../ui/CheckboxSet';
 import {
@@ -87,6 +89,7 @@ export type GroupDialogView = {
   // Set once the group being edited is gone from the list, removed or renamed elsewhere: the edits stay to copy, unsaved.
   removed: string | null;
   policy: string | null;
+  policyChoices: ReturnType<typeof policyChoices>;
   membershipFilters: string[] | null;
   invalid: boolean;
   filters: Array<{
@@ -205,6 +208,10 @@ export function useGroupDialog(input: Input): GroupDialogView {
   const [viewing, setViewing] = useState(false);
   const busy = source.busy;
   const resources = useCapabilities().data?.resources;
+  // The dialect the group declaration is written in decides which policies the picker offers and which ones pick a
+  // member by hand.
+  const version = useVersion().data;
+  const dialect: Dialect = engineOf(version).dialect ?? 'honk';
   const allNodes = useNodes(!!draft && offered(resources, 'nodes', {whileLoading: false}));
   const providers = useProviders(!!draft && offered(resources, 'providers', {whileLoading: false}));
   const config = useConfig(!!draft && offered(resources, 'config', {whileLoading: false}));
@@ -227,11 +234,11 @@ export function useGroupDialog(input: Input): GroupDialogView {
     [filters, nodes, providers.data, lang, declaredTags]
   );
   const routes: RouteField[] = creating
-    ? manualPolicy(draft?.policy ?? null)
+    ? manualPolicy(draft?.policy ?? null, dialect)
       ? ['default_member_id', 'final_outbound']
       : ['final_outbound']
-    : routeFields(context.g, draft?.policy ?? null);
-  const members = draft && manualPolicy(draft.policy) ? draftMembers(filters, nodes, t) : creating ? [] : context.members;
+    : routeFields(context.g, draft?.policy ?? null, dialect);
+  const members = draft && manualPolicy(draft.policy, dialect) ? draftMembers(filters, nodes, t) : creating ? [] : context.members;
   const groupName = creating ? (draft?.name.trim() ?? '') : (draft?.name ?? '');
   const excluded = finalExcluded(groupName, context.outbounds.links);
   const [tried, setTried] = useState(false);
@@ -245,7 +252,7 @@ export function useGroupDialog(input: Input): GroupDialogView {
     !!draft &&
     ((creating && !!draft.name) ||
       (!creating && draft.interrupt !== entry?.interrupt) ||
-      draft.policy !== (creating ? newGroupPolicies[0].id : entry?.policy) ||
+      draft.policy !== (creating ? newGroupPolicies[dialect][0].id : entry?.policy) ||
       invalid ||
       JSON.stringify(filters) !== JSON.stringify(creating ? [] : entry?.filters) ||
       routes.some(id => draft[routeKeys[id]] !== routeValue(entry?.[routeKeys[id]] ?? null)));
@@ -354,6 +361,7 @@ export function useGroupDialog(input: Input): GroupDialogView {
     problem,
     removed,
     policy: draft?.policy ?? null,
+    policyChoices: policyChoices(draft?.policy ?? null, t, dialect),
     membershipFilters: draft ? filters : (entry?.filters ?? null),
     invalid,
     filters: (draft?.filters ?? []).filter(advancedFilter).map((filter, index, fields) => {
@@ -478,7 +486,7 @@ export function useGroupDialog(input: Input): GroupDialogView {
           origin: source.main,
           opened: null,
           refused: false,
-          policy: newGroupPolicies[0].id,
+          policy: newGroupPolicies[dialect][0].id,
           filters: filters.map(filter => groupFilterDraft(filter)),
           default: null,
           final: null,

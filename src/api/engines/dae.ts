@@ -88,6 +88,7 @@ function reason(subject: EngineSubject, capabilities: Capabilities): EngineReaso
 
 export const dae: Engine = {
   id: 'dae',
+  dialect: 'dae',
   // dae docs/en/configuration/api.md: share links parse for these schemes; anything else answers 422.
   nodeLinkSchemes: ['http', 'socks', 'socks4', 'socks4a', 'socks5', 'ss', 'ssr', 'trojan', 'vmess', 'vless', 'hysteria2', 'tuic', 'juicity', 'anytls', 'naive'],
   flowDemandGraceSeconds: null,

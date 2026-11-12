@@ -1,6 +1,7 @@
 import {expect, it} from 'vitest';
 import {translate, type Translator} from '../../i18n';
 import {groupEditSafe, groupPolicyText, policyChoices, policyLabel} from './policyText';
+import {policyKind} from '../../dae/vocab';
 const t: Translator = (key, params) => translate('en', key, params);
 
 for (const lang of ['en', 'zh-TW', 'zh-CN'] as const) {
@@ -32,7 +33,10 @@ for (const lang of ['en', 'zh-TW', 'zh-CN'] as const) {
     expect(policyLabel(value, local)).toBe(expected);
     if (value) {
       expect(policyChoices(value, local).items.find(item => item.id === value)?.label).toBe(expected);
-      expect(groupPolicyText({kind: 'selector', native: value}, local)).toEqual(expected === value ? {label: expected} : {label: expected, id: value});
+      // The card labels a live group by the kind the backend reports beside the native text.
+      const kind = policyKind(value) ?? 'selector';
+      if (kind !== 'selector' || expected === t('policy.kind.selector'))
+        expect(groupPolicyText({kind, native: value}, local)).toEqual(expected === value ? {label: expected} : {label: expected, id: value});
     }
   });
 }
