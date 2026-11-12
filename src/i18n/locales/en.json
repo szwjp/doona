@@ -970,6 +970,7 @@
   "login.submit": "Connect",
   "login.title": "Token required",
   "login.token": "Token",
+  "login.tokenLoopback": "A backend that admits loopback connections without a token takes an empty field.",
   "login.tokenRequired": "Enter the backend token in this profile. Saving returns to sign-in.",
   "login.username": "Username",
   "login.usernameRequired": "Enter a username.",

@@ -832,6 +832,7 @@
   "login.submit": "连接",
   "login.title": "需要 Token",
   "login.token": "Token",
+  "login.tokenLoopback": "允许本机回环免密访问的后端可以留空。",
   "login.tokenRequired": "请在此配置方案中输入后端 Token，保存后返回登录页面。",
   "login.username": "用户名",
   "login.usernameRequired": "请输入用户名。",
