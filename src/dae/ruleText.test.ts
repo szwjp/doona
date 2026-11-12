@@ -23,6 +23,21 @@ it('anchors redacted display rules and fallbacks by kind, source identity and lo
   );
 });
 
+it('anchors a rule whose configuration quotes a parameter the display drops', () => {
+  // dae renders `dip(224.0.0.0/3, 'ff00::/8') -> direct` as
+  // `dip(224.0.0.0/3, ff00::/8) -> direct`; the quotes are not part of the rule.
+  const quoted = "routing {\n  dip(224.0.0.0/3, 'ff00::/8') -> direct\n  fallback: direct\n}\n";
+  const shown = {
+    ...rule,
+    expression: 'dip(224.0.0.0/3, ff00::/8) -> direct',
+    outbound: 'direct',
+    source: {file: 'routing.dae', source_id: 'source', line: 2, column: null}
+  };
+  const anchor = ruleAnchor({...source, content: quoted}, shown);
+  expect(anchor).not.toBeNull();
+  expect(anchor!.text).toBe("  dip(224.0.0.0/3, 'ff00::/8') -> direct\n");
+});
+
 it('refuses changed source anchors, unavailable identities and non-routing locations', () => {
   const anchor = ruleAnchor(source, rule)!;
   const changed = text.replace('mix', 'block');

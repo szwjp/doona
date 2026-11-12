@@ -58,6 +58,11 @@ function anchorAt(source: ConfigSource, rule: Listed, place: Placement, scan?: R
   if ((rule.kind === 'fallback') !== fallback) return null;
   // The line must still hold this rule: a source shifted since the list was read would otherwise edit its neighbour.
   const fold = (value: string) => (place.foldCase ? value.toLowerCase() : value);
+  // The engine renders a rule without the quotes its configuration may carry:
+  // `dip(224.0.0.0/3, 'ff00::/8') -> direct` reads back as
+  // `dip(224.0.0.0/3, ff00::/8) -> direct`. Quotes therefore take no part in
+  // the comparison; the line itself still has to hold this rule.
+  const unquoted = (value: string) => value.replace(/['"]/g, '');
   const bare = (from: number, to: number) => compact(text.slice(from, to));
   const arrow = fallback ? actual[1] : actual.find(token => token.parens === 0 && text.slice(token.from, token.to) === '->');
   const target = compact(place.target);
@@ -65,7 +70,9 @@ function anchorAt(source: ConfigSource, rule: Listed, place: Placement, scan?: R
   // The display expression may end with its target, as the contract shows it (`pname(curl) -> direct`), or not.
   const shown = compact(rule.expression);
   const condition = fold(shown).endsWith(fold('->' + target)) ? shown.slice(0, -target.length - 2) : shown;
-  if (!fallback && !rule.expression.includes('<redacted>') && bare(first.from, arrow.from) !== condition) return null;
+  // Only the condition ignores quotes: a target such as the DNS upstream
+  // `'my dns'` names a key, and its quotes are part of that name.
+  if (!fallback && !rule.expression.includes('<redacted>') && unquoted(bare(first.from, arrow.from)) !== unquoted(condition)) return null;
   const from = text.lastIndexOf('\n', first.from - 1) + 1;
   const newline = text.indexOf('\n', last.to);
   const to = newline === -1 ? text.length : newline + 1;
