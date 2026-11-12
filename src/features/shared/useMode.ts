@@ -19,12 +19,15 @@ export function useMode() {
   const resources = capabilities?.resources;
   const groups = useGroups(offered(resources, 'groups', {whileLoading: false}));
   const config = useConfig(offered(resources, 'config', {whileLoading: false}));
-  const {main, checking, writable, busy, error, retry, apply: write} = useMainSourceEdit();
+  const {target, checking, writable, busy, error, retry, apply: write} = useMainSourceEdit();
   // The mode is a rule doona writes into dae text, so another engine's configuration neither shows nor takes one.
   // Until the version names the engine the card waits as it does for the configuration.
   const version = useVersion().data;
   const daeText = engineOf(version).daeText;
-  const content = daeText ? (main ?? config.data?.sources.find(source => source.kind === 'main'))?.content : undefined;
+  // The mode's marker rule lives in the file that holds `routing`, which need not be the main file when the engine
+  // keeps its entry file read-only.
+  const routing = target('routing');
+  const content = daeText ? (routing ?? config.data?.sources.find(source => source.kind === 'main'))?.content : undefined;
   const current = useMemo<OutboundMode>(() => (content == null ? {mode: 'rule'} : readMode(content)), [content]);
   const [staged, setStaged] = useModeDraft();
   const action = useAction<'apply'>({shared: 'mode-action'});
@@ -32,12 +35,12 @@ export function useMode() {
   // Each write changes the source, which is then checked again. The card keeps its controls meanwhile instead of
   // flashing the read-only status, so the Apply button a screen reader was just told about stays in place.
   const reason = capabilities && engineOf(version).reason('mode', capabilities);
-  const view = modeView(current, staged, groups.data ?? [], daeText && writable && (!!main || checking), configAvailable, t, content != null, reason);
+  const view = modeView(current, staged, groups.data ?? [], daeText && writable && (!!routing || checking), configAvailable, t, content != null, reason);
   const apply = () =>
     action.run('apply', async () => {
       const submitted = staged;
       if (!submitted || (submitted.mode === 'global' && !submitted.target)) return;
-      const result = await write(text => writeMode(text, submitted));
+      const result = await write(text => writeMode(text, submitted), routing ?? undefined);
       if (result.kind === 'ok') {
         setStaged(current => (current === submitted ? null : current));
         toast('positive', t('act.modeApplied', {mode: t(modeLabels[submitted.mode])}));

@@ -45,8 +45,8 @@ export function usePolicies({go, query}: PageProps) {
     setHealth({from: nodes.data, groups: groups.data, map: sameHealth(health.map, map) ? health.map : map});
   }
   const sourceState = useMainSourceEdit();
-  const {main, writable, busy, apply, error, retry} = sourceState;
-  const source = useMemo(() => ({main, writable, busy, apply, error, retry}), [main, writable, busy, apply, error, retry]);
+  const {main, target, writable, busy, apply, error, retry} = sourceState;
+  const source = useMemo(() => ({main, target, writable, busy, apply, error, retry}), [main, target, writable, busy, apply, error, retry]);
   // A group is edited in the source that declares it, which need not be the main one.
   const config = useConfig(offered(resources, 'config', {whileLoading: false}));
   const sources = config.data?.sources;
@@ -147,8 +147,8 @@ export function usePolicies({go, query}: PageProps) {
   const editorOpened = useCallback(() => go('policies', within(query, {edit: null, node: null}), {replace: true}), [go, query]);
   const newRequested = params.get('new') === '1';
   useEffect(() => {
-    if (newRequested && source.main && source.writable) openCreate();
-  }, [newRequested, source.main, source.writable]);
+    if (newRequested && source.target('group') && source.writable) openCreate();
+  }, [newRequested, source]);
   return {
     declarations,
     cards: edited.gone ? [...kinds.shown, {...edited.gone, gone: true}] : kinds.shown,
@@ -157,7 +157,7 @@ export function usePolicies({go, query}: PageProps) {
     providers: providers.data?.providers ?? [],
     memberSources,
     create,
-    createDisabled: !source.writable || !source.main || source.busy,
+    createDisabled: !source.writable || !source.target('group') || source.busy,
     editRequested: params.get('edit') === '1',
     seedNode: params.get('node') ?? undefined,
     editorOpened,
