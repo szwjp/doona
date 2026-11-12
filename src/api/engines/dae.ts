@@ -27,9 +27,7 @@ function reason(subject: EngineSubject, capabilities: Capabilities): EngineReaso
       if (!resources.config.available) return {code: 'config-unloaded'};
       if (resources.config.writable !== false) return undefined;
       // The API switch takes precedence in dae's own reason: the layout is only reported when writes are on.
-      return extension(capabilities)?.layout?.reason === 'layout_unmanaged'
-        ? {code: 'layout-unmanaged'}
-        : {code: 'writes-off', settings: [writeSwitch]};
+      return extension(capabilities)?.layout?.reason === 'layout_unmanaged' ? {code: 'layout-unmanaged'} : {code: 'writes-off', settings: [writeSwitch]};
     }
     // Creating sources, the forms, the rule and group editors and activating a revision all write the configuration
     // (config_editor.go: create is false, config_patch follows the same switch).
@@ -67,6 +65,10 @@ function reason(subject: EngineSubject, capabilities: Capabilities): EngineReaso
     // dae resolves routing traces without a live DNS lookup (resolve_modes is `none` only); no setting turns the live
     // mode on.
     case 'trace_live':
+      return {code: 'no-switch'};
+    // dae has no runtime settings resource and no create route: neither is a build gap, just something the engine
+    // never offers.
+    case 'runtime_settings':
       return {code: 'no-switch'};
     // dae has no configuration extension: export, import and revisions are not routes at all.
     case 'export':

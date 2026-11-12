@@ -89,7 +89,9 @@ export function classifyLimits(
   // honk config.rs running: validation needs the sources loaded too, so it shares that cause and no other.
   const validateUnloaded = !resources.config_validate.available && configCause === 'configNotLoaded';
   if (validateUnloaded) add('configNotLoaded', 'config_validate');
-  if (resources.nodes.can_manage === false || resources.providers.can_manage === false) add(configCause ?? 'mainReadOnly', 'manage');
+  // Node edits write the configuration. Subscription management needs the engine to create providers, which an engine
+  // may never offer over its API (dae); the Nodes page already hides what it cannot do, so this stays about nodes.
+  if (resources.nodes.can_manage === false) add(configCause ?? 'mainReadOnly', 'manage');
   // The other writes share the configuration's cause too: creating sources, the forms and the rule and group editors.
   const write = (id: LimitId, off: boolean) => off && add(configCause ?? 'notProvided', id);
   write('create', resources.config.available && resources.config.create === false);

@@ -1123,7 +1123,10 @@
   "ov.lim.h.geodataUnreadable": "地理資料無法使用",
   "ov.lim.h.geodataUpdate": "無法更新地理資料",
   "ov.lim.h.mainReadOnly": "無法編輯節點與節點來源",
-  "ov.lim.h.notProvided": "目前的 honk 版本沒有 {n} 項功能",
+  "ov.lim.h.notProvided": {
+    "one": "此建置缺少 {n} 項功能",
+    "other": "此建置缺少 {n} 項功能"
+  },
   "ov.lim.h.notProvidedOther": "後端未提供 {n} 項功能",
   "ov.lim.h.notRunning": "{n} 項服務暫時無法使用",
   "ov.lim.h.probes": "延遲探測暫時未運作",

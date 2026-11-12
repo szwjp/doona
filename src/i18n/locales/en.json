@@ -1280,8 +1280,8 @@
   "ov.lim.h.geodataUpdate": "Geodata cannot be updated",
   "ov.lim.h.mainReadOnly": "Nodes and node sources cannot be edited",
   "ov.lim.h.notProvided": {
-    "one": "This honk build lacks {n} feature",
-    "other": "This honk build lacks {n} features"
+    "one": "This build lacks {n} feature",
+    "other": "This build lacks {n} features"
   },
   "ov.lim.h.notProvidedOther": {
     "one": "The backend does not provide {n} feature",
