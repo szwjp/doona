@@ -103,7 +103,7 @@ export type EngineConfig = {
 // An engine's explanations for what the native API contract states without a reason. An engine that does not know a
 // reason says nothing, so the page falls back to what the contract says.
 export type Engine = {
-  id: 'honk' | 'unknown';
+  id: 'honk' | 'dae' | 'unknown';
   // Seconds the engine keeps recording flow demand after the last client read or stream; null when it does not say.
   flowDemandGraceSeconds: number | null;
   // Why `subject` is off, given that the capabilities show it is; undefined when the engine does not say.
