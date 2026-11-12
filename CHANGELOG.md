@@ -6,6 +6,34 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.7] - 2026-11-12
+
+### Added
+
+- The demo backend can serve a dae scenario (`?engine=dae`), with dae's capabilities, its `config.dae`/`config.d/*.dae` layout, its hidden `api.dae`, its own global fields and policies, and the two group fields it lets the API patch, plus end-to-end coverage for its configuration, groups, nodes and outbound mode. (#1)
+- The page recognises the dae engine by the name its version reports, so a dae backend now gets the configuration editor, the global settings form, share-link checks for dae's schemes, the `systemctl restart dae` hint and dae's own explanations for what is read-only. honk keeps its adapter unchanged. (#1)
+- The lite settings dialog names dae's own global fields, and shows a field's key when this build's catalogue has no label for it yet. (#1)
+- The group editor offers the policies and the text editor completes the global keys of the connected engine: dae's `random`, `fixed`, `select`, `min`, `min_avg10` and `min_moving_avg` instead of honk's `score`, `roundrobin` and `fallback`. A group's policy label follows the kind the backend reports, so dae's `random` and `fixed` groups no longer read as manual ones. (#1)
+- Geodata automatic updates can run daily at a set hour, the default on honk versions with cron schedules; another cron expression shows read-only with a switch to daily. (#683)
+- doona lite reads and writes each page's section in the file that holds it, so its settings, node, group, routing, DNS and subscription pages can edit an engine whose entry file is read-only and whose sections live in includes (dae's managed layout). After a write the page keeps the file it wrote instead of falling back to the entry file. (#3)
+
+### Changed
+
+- The token sign-in accepts an empty field, which a backend that admits loopback peers without a token takes as a credential-free session; the field says so while it is empty. A token backend still answers the same refusal. (#1)
+- An edit goes to the configuration file that holds the section it changes, instead of always to the main file: creating a group, joining nodes to one, or setting the outbound mode now works on an engine whose entry file is read-only (dae's managed layout keeps every section in `config.d/*.dae`). honk writes to its main file as before. (#1)
+
+### Fixed
+
+- dae omits the runtime-settings resource entirely; the overview now says the backend does not provide it instead of counting it among features the build lacks. (#2)
+- The global settings form opens on the first file that actually holds a `global` section, instead of an engine's read-only entry file that has none. (#1)
+- The Activity page no longer loads another page's messages before the configuration is read, when the mode card is only waiting rather than read-only. (#1)
+- The overview only calls node management unavailable when nodes cannot be edited; an engine that never creates subscription providers over its API (dae) no longer reads as a read-only main file. (#1)
+- A feature the build lacks no longer reads as a honk build; the headline names the build rather than the engine. (#1)
+- A section is written in the file that holds it: when that file's text cannot be written back, the page offers no way to edit the section instead of adding a second copy in another file. An engine whose entry file is read-only and whose sections live in includes keeps writing those includes. (#1)
+- The mode card no longer waits for a completeness check that never ran, so a readable configuration turns writable as soon as it is read. (#1)
+- The overview now explains on-demand flow recording and the Off mode instead of only naming them, and says how to record without a client. (#681)
+- A write refused over a restart-only setting the configuration does not state now says so, instead of reporting a change nobody made. (#681)
+
 ## [0.1.0-rc.6] - 2026-11-09
 
 ### Added
@@ -1067,7 +1095,8 @@ Entries live in [changes/](changes/) until release.
 
 - Keep table columns and action cells visible and prevent cards and controls from overflowing.
 
-[Unreleased]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.6...HEAD
+[Unreleased]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.7...HEAD
+[0.1.0-rc.7]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.6...v0.1.0-rc.7
 [0.1.0-rc.6]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.5...v0.1.0-rc.6
 [0.1.0-rc.5]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.4...v0.1.0-rc.5
 [0.1.0-rc.4]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.3...v0.1.0-rc.4
