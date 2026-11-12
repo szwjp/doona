@@ -3,7 +3,7 @@ import {sha256} from '../../../src/api/hash';
 import {validationSources} from '../../../src/dae/sources';
 import {isNodeLink, readNodeEntries} from '../../../src/dae/nodes';
 import {isQuotable, quote, scanConfig} from '../../../src/dae/text';
-import {LiteError, readMain, readProviders, type Connection} from './api';
+import {LiteError, readProviders, readSource, type Connection} from './api';
 
 export const canWrite = (connection: Connection, source?: ConfigSource) =>
   connection.capabilities.resources.config.writable === true &&
@@ -29,7 +29,7 @@ export async function readNodePage(connection: Connection, signal?: AbortSignal)
   const {api, capabilities} = connection;
   const [nodes, source, config, providers] = await Promise.all([
     readNodes(connection, signal),
-    capabilities.resources.config.available ? readMain(api, signal) : undefined,
+    capabilities.resources.config.available ? readSource(api, 'node', signal) : undefined,
     capabilities.resources.config.available ? api.config(signal) : undefined,
     capabilities.resources.providers.available ? readProviders(api, signal) : []
   ]);

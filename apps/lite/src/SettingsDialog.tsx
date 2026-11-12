@@ -27,7 +27,7 @@ import {serializeSetting, settingValue, writeSettings} from '../../../src/dae/se
 import {blockFields, scanConfig} from '../../../src/dae/text';
 import {copyText} from '../../../src/features/shared/copy';
 import {AboutPanel} from './AboutPanel';
-import {applyContent, readMain, type Connection} from './api';
+import {applyContent, readSource, type Connection} from './api';
 import {usePreferences} from './app/preferences';
 import {canWrite, validateContent} from './config';
 import {localeNames, useMessages, type MessageKey} from './i18n';
@@ -106,7 +106,7 @@ export function SettingsDialog({
   const [candidate, setCandidate] = useState<string | null>(null);
   const read = useRead(
     useCallback(
-      (signal?: AbortSignal) => (isOpen && connection.capabilities.resources.config.available ? readMain(connection.api, signal) : Promise.resolve(undefined)),
+      (signal?: AbortSignal) => (isOpen && connection.capabilities.resources.config.available ? readSource(connection.api, 'global', signal) : Promise.resolve(undefined)),
       [connection, isOpen]
     )
   );

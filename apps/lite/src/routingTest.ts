@@ -1,7 +1,7 @@
 import type {ConfigSource, RoutingTraceInput, RoutingTraceResponse, RoutingRule} from '../../../src/api/model';
 import {ipLiteral, simulatedAddress} from '../../../src/api/selectors';
 import {scanConfig} from '../../../src/dae/text';
-import {configSnapshot, LiteError, readMain, type Connection} from './api';
+import {configSnapshot, LiteError, readSource, type Connection} from './api';
 import {parseRuleList, type DraftRule} from './ruleDraft';
 
 export function testInput(value: string, port: number | null, network: 'tcp' | 'udp'): RoutingTraceInput {
@@ -48,7 +48,7 @@ export async function runRoutingTest(connection: Connection, input: RoutingTrace
     }
     return [await api.routingTrace({input, resolve: 'none'})];
   };
-  const [traces, rules, source] = await Promise.all([trace(), resources.rules.available ? api.rules() : Promise.resolve(null), readMain(api)]);
+  const [traces, rules, source] = await Promise.all([trace(), resources.rules.available ? api.rules() : Promise.resolve(null), readSource(api, 'routing')]);
   const generation = configSnapshot(api)?.generation_id;
   if (
     (generation !== undefined && generation !== traces[0].generation_id) ||
