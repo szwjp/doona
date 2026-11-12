@@ -53,13 +53,18 @@ function withoutBlocks(text: string, names: string[]): string {
 
 // dae's managed layout (cmd/config_layout.go): config.dae holds only the include of config.d/*.dae and api.dae, and is
 // the one read-only source; every section lives in an include. The seed content is honk's demo, split the same way.
-const daeMain = withoutBlocks(honk.configMain, ['global', 'include']);
+// honk's template names policies dae does not have: score becomes its latency pick, min_last_delay its `min`.
+const daeMain = withoutBlocks(honk.configMain, ['global', 'include'])
+  .replaceAll('policy: score', 'policy: min_moving_avg')
+  .replaceAll('policy: min_last_delay', 'policy: min');
 export const daeEntry = `# Managed by dae: everything lives in config.d, and this file is never written.
 include {
   config.d/*.dae
   api.dae
 }
 `;
+// The same text the seeded includes hold, for the inventory fixtures to activate without the entry file.
+export const daeInventoryConfig = daeMain;
 export const daeSources: Array<Omit<ConfigSource, 'content_sha256' | 'bytes' | 'line_count'> & {content: string; onDisk?: string}> = [
   // api.dae is hidden from the API (x-dae.hidden_sources), so the page never lists it.
   {id: 'src-entry', path: '/etc/dae/config.dae', kind: 'main', writable: false, loaded_at: ago(3600), content: daeEntry},

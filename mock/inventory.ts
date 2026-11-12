@@ -65,12 +65,13 @@ export function createInventory(
   geodata: MockGeodataState,
   faults = false,
   acceptWrites = false,
-  fixtures: typeof standardFixtures = standardFixtures
+  fixtures: typeof standardFixtures = standardFixtures,
+  engine: 'honk' | 'dae' = 'honk'
 ) {
   const nodePage = createPager('nodes');
   const providerPage = createPager('providers');
   const providers = structuredClone(fixtures.providers);
-  const {nodes, groups} = fixtures.nodeFixtures(Number.isFinite(count) ? count : 120, faults);
+  const {nodes, groups} = fixtures.nodeFixtures(Number.isFinite(count) ? count : 120, faults, engine);
   for (const provider of providers) provider.node_count = nodes.filter(n => n.provider_id === provider.id).length;
   // In the faults scenario the subscription host fails every fetch: the provider keeps its cached nodes as stale. Like
   // honk's fetch_failed, the error names the failed stage and the node and group the download went through.
@@ -408,6 +409,6 @@ export function createInventory(
     api,
     groupNames: () => new Set(groups.map(group => group.name)),
     groupIds: () => new Set(groups.map(group => group.id)),
-    activate: (text: string, revision: string) => activateInventory(text, revision, nodes, groups, providers)
+    activate: (text: string, revision: string) => activateInventory(text, revision, nodes, groups, providers, undefined, engine)
   };
 }

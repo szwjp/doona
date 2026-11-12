@@ -132,7 +132,8 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     geodata,
     faults,
     options.acceptWrites,
-    options.fixtures?.inventory
+    options.fixtures?.inventory,
+    engine
   );
   let api = {...runtime.api, ...lifecycle.api, ...network.api, ...inventory.api, ...configuration.api};
   if (latency) api = withLatency(api, latency);
