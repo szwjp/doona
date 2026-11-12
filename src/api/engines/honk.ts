@@ -156,5 +156,7 @@ export const honk: Engine = {
     blocks
       .filter(block => block.name === 'experimental' && block.children.some(child => child.name === 'native_api'))
       .map(block => ({block, name: 'experimental.native_api'})),
-  daeText: true
+  daeText: true,
+  // honk keeps the sections in its entry file; a node in an include is hand-written, not something its API owns.
+  sectionsInIncludes: false
 };

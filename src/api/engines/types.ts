@@ -123,6 +123,10 @@ export type Engine = {
   // Whether the configuration text is dae's, which doona reads and writes; a page that infers settings from the text
   // or edits it by hand checks this first.
   daeText: boolean;
+  // Whether the engine keeps its configuration sections in included files by design (dae's managed layout, where the
+  // entry file is read-only). A page that would otherwise treat an include as hand-written checks this before
+  // refusing a write.
+  sectionsInIncludes: boolean;
   nodeLinkSchemes: readonly string[] | null;
   globalSettings: SettingsSection | null;
   // The global settings the engine applies only when it restarts, so a write that changes them is refused.

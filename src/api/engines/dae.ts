@@ -105,5 +105,7 @@ export const dae: Engine = {
   holdsCredentials: () => false,
   snippet,
   redactedSections: () => [],
-  daeText: true
+  daeText: true,
+  // The managed layout: config.d/*.dae holds the sections and config.dae only includes them.
+  sectionsInIncludes: true
 };

@@ -168,6 +168,7 @@ export function useNodesPage({go, query}: PageProps) {
   // A subscription is edited in whichever source declares it, and only in dae text this page knows how to write.
   const version = useVersion().data;
   const daeText = engineOf(version).daeText;
+  const sectionsInIncludes = engineOf(version).sectionsInIncludes;
   const parsed =
     dialog?.kind === 'node' &&
     parseNodeLinks(
@@ -229,7 +230,12 @@ export function useNodesPage({go, query}: PageProps) {
   // The add dialog offers custom groups only: a subscription, region or rule group takes its nodes from its own filters.
   const joinChoices = useMemo(() => joinable.filter(customGroup).map(entry => ({id: entry.name, label: entry.name})), [joinable]);
   const joinPicked = joinPick.filter(name => joinChoices.some(choice => choice.id === name));
-  const nodeInInclude = useCallback((node: Node) => declaredInInclude(authored.filter(item => item.entry.name === node.name)), [authored]);
+  // A node in an include is out of this page's reach only when the engine keeps its sections in the main file: dae
+  // writes each section to its own file (config.d/node.dae), so there the include is where its API deletes the node.
+  const nodeInInclude = useCallback(
+    (node: Node) => !sectionsInIncludes && declaredInInclude(authored.filter(item => item.entry.name === node.name)),
+    [authored, sectionsInIncludes]
+  );
   const providerInInclude = useCallback((item: ProviderRow) => declaredInInclude(item.sourceTag ? (declared.get(item.sourceTag) ?? []) : []), [declared]);
   const removableNodes = useMemo(() => {
     const inline = new Set((providers.data?.providers ?? []).filter(item => item.kind === 'inline').map(item => item.id));

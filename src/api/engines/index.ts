@@ -14,6 +14,7 @@ const unknown: Engine = {
   snippet: settings => settings.map(({key, value}) => `${key}: ${value}`).join('\n'),
   redactedSections: () => [],
   daeText: false,
+  sectionsInIncludes: false,
   nodeLinkSchemes: null,
   globalSettings: null,
   restartOnly: [],
