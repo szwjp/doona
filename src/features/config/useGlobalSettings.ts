@@ -42,7 +42,13 @@ export function useGlobalSettings({query, go}: PageProps) {
         label: `${fileName(source)}:${block ? block.line + 1 : 1}`
       }));
     });
-  const chosen = choices.find(choice => choice.source.id === params.get('source') && choice.index === Number(params.get('section') ?? 0)) ?? choices[0];
+  // A section the page can edit opens first: an engine whose entry file is read-only still lists it as a file with no
+  // global section, and that choice would open the form read-only.
+  const chosen =
+    choices.find(choice => choice.source.id === params.get('source') && choice.index === Number(params.get('section') ?? 0)) ??
+    choices.find(choice => choice.block !== null && choice.source.writable) ??
+    choices.find(choice => choice.block !== null) ??
+    choices[0];
   const source = chosen?.source;
   const editor = useConfigEditor(config.refetch);
   const [draft, setDraft] = useState<{source: ConfigSource; id: string; patch: Record<string, string>} | null>(null);
