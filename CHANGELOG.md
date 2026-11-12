@@ -6,6 +6,13 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.8] - 2026-11-12
+
+### Fixed
+
+- Nodes on a dae backend can be removed again: an engine that keeps its sections in included files (dae's managed layout) no longer reports every node as declared outside the main file.
+- The reload command and the probe settings no longer name honk on a dae backend.
+
 ## [0.1.0-rc.7] - 2026-11-12
 
 ### Added
@@ -1095,7 +1102,8 @@ Entries live in [changes/](changes/) until release.
 
 - Keep table columns and action cells visible and prevent cards and controls from overflowing.
 
-[Unreleased]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.7...HEAD
+[Unreleased]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.8...HEAD
+[0.1.0-rc.8]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.7...v0.1.0-rc.8
 [0.1.0-rc.7]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.6...v0.1.0-rc.7
 [0.1.0-rc.6]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.5...v0.1.0-rc.6
 [0.1.0-rc.5]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.4...v0.1.0-rc.5

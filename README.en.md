@@ -86,7 +86,7 @@ Available features depend on the backend’s capabilities and configuration; see
 
 ## Two editions
 
-doona lite is a preview in testing in 0.1.0-rc.7; its pages and behaviour may change. Both editions connect to the same backend with the same administrator credentials.
+doona lite is a preview in testing in 0.1.0-rc.8; its pages and behaviour may change. Both editions connect to the same backend with the same administrator credentials.
 
 | Area               | Standard edition                                          | doona lite (preview)                               |
 | ------------------ | --------------------------------------------------------- | -------------------------------------------------- |
@@ -120,9 +120,9 @@ The engine handles proxying; see the [honk node reference](https://github.com/da
 
 ## Latest release
 
-[0.1.0-rc.7](CHANGELOG.md) has 17 entries: 6 additions, 2 changes and 9 fixes.
+[0.1.0-rc.8](CHANGELOG.md) has 2 fixes.
 
-This release lets doona drive dae as well as honk: the page recognises dae, edits each section in the file that holds it, reads dae's own global settings and policies, accepts a tokenless loopback sign-in and explains what dae does not offer. doona lite can write dae's configuration too, the demo backend can serve a dae scenario, and geodata can update daily at a set hour.
+This release fixes node management on a dae backend: dae writes every section to its own include (`config.d/node.dae`), and a node there is no longer treated as declared outside the main file and therefore unremovable. The reload command and the probe settings also stop naming honk on a dae backend.
 
 ## Documentation
 
