@@ -38,12 +38,17 @@ it('writes an engine whose entry file is read-only to its includes', () => {
   expect(pickTarget(sources, allComplete, 'group')).toBe(global);
 });
 
-it('skips a source whose text cannot be written back, such as a redacted copy', () => {
+it('writes nothing when the file that holds the section cannot be written back', () => {
   const redacted = source('main', 'main', "node {\n  a: 'ss://<redacted>'\n}\n");
   const groups = source('groups', 'include', 'group {\n  proxy {\n    policy: select\n  }\n}\n');
   const complete = (item: ConfigSource) => item.id !== 'main';
-  expect(pickTarget([redacted, groups], complete)).toBe(groups);
-  expect(pickTarget([redacted], complete)).toBeNull();
+  // The node section lives in the unreadable main file: no copy goes into another file.
+  expect(pickTarget([redacted, groups], complete, 'node')).toBeNull();
+  // No section named: a readable main file wins; an unreadable one leaves nothing to write to.
+  expect(pickTarget([redacted, groups], complete)).toBeNull();
+  // An engine whose entry file is read-only and readable writes its includes.
+  const entry = source('entry', 'main', 'include {\n  config.d/*.dae\n}\n', {writable: false});
+  expect(pickTarget([entry, groups], complete, 'group')).toBe(groups);
 });
 
 it('answers nothing while no source is writable', () => {

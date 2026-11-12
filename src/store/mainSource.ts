@@ -29,11 +29,19 @@ const incompleteSource = new LocalError('config.incomplete');
 // else the writable main file, else the first writable source. `complete` says whether a source's text may be written
 // back as it was read.
 export function pickTarget(sources: readonly ConfigSource[], complete: (source: ConfigSource) => boolean | undefined, section?: string): ConfigSource | null {
-  const usable = sources.filter(source => source.writable && complete(source) === true);
-  const fallback = usable.find(source => source.kind === 'main') ?? usable[0] ?? null;
-  if (!section) return fallback;
-  const holds = usable.filter(source => scanConfig(source.content).blocks.some(block => block.name === section));
-  return holds.find(source => source.kind === 'main') ?? holds[0] ?? fallback;
+  const writable = sources.filter(source => source.writable);
+  const usable = writable.filter(source => complete(source) === true);
+  const main = writable.find(source => source.kind === 'main');
+  const holds = (source: ConfigSource) => scanConfig(source.content).blocks.some(block => block.name === section);
+  if (section) {
+    const holders = writable.filter(source => scanConfig(source.content).blocks.some(block => block.name === section));
+    // A section has one home: when a writable file holds it, that file is the target, and an unreadable one leaves
+    // nothing to write to rather than a copy in another file.
+    if (holders.length) return usable.filter(holds).find(source => source.kind === 'main') ?? usable.filter(holds)[0] ?? null;
+  }
+  // A new declaration goes to the main file when there is one, and only to another writable file when the engine
+  // keeps its entry file read-only (dae).
+  return main ? (complete(main) === true ? main : null) : (usable[0] ?? null);
 }
 // `invalid` keeps the diagnostics of the preflight, so the edit can say which lines were refused, as a refused write does.
 export type EditResult = {kind: 'ok'} | {kind: 'invalid'; diagnostics: ConfigDiagnostic[]} | {kind: 'cancelled'} | {kind: 'failed'; error: unknown};
@@ -57,7 +65,8 @@ export function useMainSourceEdit(): MainSourceEdit & {checking: boolean} {
   return {
     main,
     target: pick,
-    checking: !main && writableSources.some(source => complete(source) === null),
+    // useCompleteness answers undefined while a digest is still being checked, true or false after.
+    checking: !main && writableSources.some(source => complete(source) === undefined),
     writable,
     busy: editor.busy !== null,
     error,
