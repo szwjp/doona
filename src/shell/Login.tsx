@@ -112,6 +112,7 @@ export function Login({
                     value={view.token}
                     autoComplete="off"
                     onChange={view.setToken}
+                    description={view.tokenNote ?? undefined}
                     reveal={reveal}
                   />
                 ) : (

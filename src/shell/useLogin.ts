@@ -224,6 +224,9 @@ export function useLogin(profileId: string, api: string, backend: string, reject
     busy,
     token,
     setToken,
+    // A token backend without a configured secret admits loopback peers, and discovery withholds that fact until a
+    // credential is presented: an empty token is a real attempt, not a missing field.
+    tokenNote: usesPassword || token.trim() ? null : t('login.tokenLoopback'),
     username,
     setUsername: edit('username', setUsername),
     usernameError: fieldError('username'),
@@ -241,7 +244,7 @@ export function useLogin(profileId: string, api: string, backend: string, reject
       else submitToken();
     },
     // Credentials are checked on submit and each problem shows on its field, so the button stays enabled for them.
-    canSubmit: kind !== null && kind !== 'no-api' && !wait && (usesPassword || !!token.trim()),
+    canSubmit: kind !== null && kind !== 'no-api' && !wait,
     // While the backend refuses attempts, the button counts down to the next one.
     submitText: wait ? t('login.retryIn', {n: wait}) : t(kind === 'setup' ? 'login.create' : kind === 'login' ? 'login.signIn' : 'login.submit'),
     secretType: shown ? 'text' : 'password',
