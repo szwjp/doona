@@ -155,7 +155,10 @@ test('a rejected saved token takes a new one on the sign-in page', async ({page}
   await expect(login.getByRole('link', {name: 'Edit saved token'})).toHaveCount(0);
   const token = login.getByLabel('Token', {exact: true});
   const connect = login.getByRole('button', {name: 'Connect', exact: true});
-  await expect(connect).toBeDisabled();
+  // An empty field is a real attempt for a backend that admits loopback peers without a token, so the page explains
+  // what an empty value means instead of disabling the button.
+  await expect(connect).toBeEnabled();
+  await expect(login.getByText(/admits loopback connections without a token/)).toBeVisible();
   await token.fill('  fresh-token  ');
   await expect(token).toHaveAttribute('type', 'password');
   await login.getByRole('button', {name: 'Show token'}).click();
