@@ -184,7 +184,7 @@ type Input =
   | {mode: 'edit'; name: string; source: MainSourceEdit; declaration: PolicyDeclaration; context: RouteContext; gone?: boolean}
   | {
       mode: 'create';
-      source: Pick<MainSourceEdit, 'main' | 'writable' | 'busy' | 'apply'>;
+      source: Pick<MainSourceEdit, 'main' | 'target' | 'writable' | 'busy' | 'apply'>;
       taken: ReadonlySet<string>;
       outbounds: OutboundCatalogue;
       nodes: Node[];
@@ -307,7 +307,9 @@ export function useGroupDialog(input: Input): GroupDialogView {
     if (retry?.kind === 'merge') Object.assign(update, retry.keep);
     saving.current = true;
     const current = session.start();
-    const origin = draft.refused ? (creating ? source.main : declared?.origin) : draft.origin;
+    // A new group goes to the file that holds the group section; an engine whose entry file is read-only keeps it in
+    // an include.
+    const origin = draft.refused ? (creating ? source.target('group') : declared?.origin) : draft.origin;
     void source
       .apply(text => {
         if (creating && readGroupEntries(text).some(entry => entry.name === group)) throw new LocalError('group.takenName');
@@ -483,7 +485,7 @@ export function useGroupDialog(input: Input): GroupDialogView {
       if (creating)
         setDraft({
           name: '',
-          origin: source.main,
+          origin: source.target('group'),
           opened: null,
           refused: false,
           policy: newGroupPolicies[dialect][0].id,

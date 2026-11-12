@@ -101,8 +101,8 @@ export function useNodeTable(input: NodeTableInput) {
     [nodes, search, activeGroup, activeProtocol, sort, contains, locale]
   );
   const entries = useMemo(() => input.joinable.map(entry => ({...entry, names: new Set(namedIn(entry))})), [input.joinable]);
-  // A new group is written to the main source.
-  const canCreate = source.writable && !source.busy && !!source.main;
+  // A new group is written to the file that holds the group section, which need not be the main file.
+  const canCreate = source.writable && !source.busy && !!source.target('group');
   const inlineProviders = useMemo(() => new Set(providers.filter(provider => provider.kind === 'inline').map(provider => provider.id)), [providers]);
   const {probe: runProbe, choices, busy: probeBusy} = probe;
   // A row per node object, rebuilt only when the node or what every row reads changes. The running probe is not part

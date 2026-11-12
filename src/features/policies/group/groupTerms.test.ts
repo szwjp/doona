@@ -83,7 +83,7 @@ it('asks before dismissing a new group draft and keeps it when discard is cancel
     hookHarness.render(() =>
       useGroupDialog({
         mode: 'create',
-        source: {main: null, writable: true, busy: false, apply: vi.fn()},
+        source: {main: null, target: () => null, writable: true, busy: false, apply: vi.fn()},
         taken: new Set(),
         outbounds: {groups: [], nodes: [], links: new Map()},
         nodes: []
@@ -128,7 +128,7 @@ it.each([
     hookHarness.render(() =>
       useGroupDialog({
         mode: 'create',
-        source: {main: null, writable: true, busy: false, apply: vi.fn().mockResolvedValue(result)},
+        source: {main: null, target: () => null, writable: true, busy: false, apply: vi.fn().mockResolvedValue(result)},
         taken: new Set(),
         outbounds: {groups: [], nodes: [], links: new Map()},
         nodes: []
