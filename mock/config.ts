@@ -9,7 +9,7 @@ import {globMatch, isGlob, resolveIncludePath} from '../src/dae/newSource';
 type Draft = Omit<ConfigSource, 'content_sha256' | 'bytes' | 'line_count'> & {content: string; onDisk?: string};
 type Stored = ConfigSource & {content: string};
 
-const sections = new Set(['global', 'subscription', 'node', 'group', 'dns', 'routing', 'upstream', 'request', 'response', 'include', 'experimental']);
+const sections = new Set(['global', 'subscription', 'node', 'group', 'dns', 'routing', 'upstream', 'request', 'response', 'include', 'experimental', 'api']);
 const builtinOutbounds = new Set(vocab.builtinOutbounds);
 const globalKeys = new Set(vocab.globalKeys.honk);
 
@@ -121,7 +121,11 @@ export function validate(
   generationId: string,
   // `local` holds files a plain include may name beyond the request; `active` is the accepted source set a full validation
   // compares restart-only settings against.
-  {local = [], active}: {local?: ConfigValidationRequest['sources']; active?: {id: string; content: string}[]} = {}
+  {
+    local = [],
+    active,
+    restartOnly = honkRestartOnly
+  }: {local?: ConfigValidationRequest['sources']; active?: {id: string; content: string}[]; restartOnly?: readonly string[]} = {}
 ): ConfigValidationResult {
   const sources = request.sources.map((source, index) => ({...source, id: source.id ?? `source-${index + 1}`}));
   if (new Set(sources.map(source => source.id)).size !== sources.length) throw new ApiError(400, 'invalid_request', 'Source IDs must be unique');
@@ -165,14 +169,15 @@ export function validate(
   }
   const groups = request.mode === 'full' ? new Set(sources.flatMap(source => [...groupsIn(source.content)])) : new Set<string>();
   diagnostics.push(...sources.flatMap(source => diagnose(source.id, source.content, groups, request.mode)));
-  if (request.mode === 'full' && active) diagnostics.push(...restartDiagnostics(active, sources));
+  if (request.mode === 'full' && active) diagnostics.push(...restartDiagnostics(active, sources, restartOnly));
   return {valid: !diagnostics.some(item => item.level === 'error'), diagnostics, generation_id: generationId, validated_at: new Date().toISOString()};
 }
 
 // The demo mirrors honk's global restart-only settings, so a candidate set that changes one of them from the accepted
 // files is refused as honk's reload check refuses it. Each setting is read from the first statement in the global
-// sections, so neither source IDs nor the layout of the block matter.
-const restartOnlyKeys = [
+// sections, so neither source IDs nor the layout of the block matter. An engine that applies every global setting on
+// reload, such as dae, passes an empty list.
+export const honkRestartOnly = [
   'check_interval',
   'tcp_check_url',
   'tcp_check_http_method',
@@ -201,7 +206,11 @@ const globalSettings = (sources: {id: string; content: string}[]) => {
     }
   return first;
 };
-function restartDiagnostics(active: {id: string; content: string}[], candidate: {id: string; content: string}[]): ConfigDiagnostic[] {
+function restartDiagnostics(
+  active: {id: string; content: string}[],
+  candidate: {id: string; content: string}[],
+  restartOnlyKeys: readonly string[]
+): ConfigDiagnostic[] {
   const before = globalSettings(active);
   const after = globalSettings(candidate);
   // honk compares tls_implementation only as "is utls". Removing a setting is not flagged: only a new value is a change the demo can name.

@@ -60,7 +60,7 @@ export function createInventory(
   count: number,
   {enqueue, log, pending}: Pick<MockLifecycle, 'enqueue' | 'log' | 'pending'>,
   advance: () => string,
-  editSource: (edit: (text: string) => string, groupName?: string) => Promise<() => string>,
+  editSource: (edit: (text: string) => string, groupName?: string, section?: string) => Promise<() => string>,
   interrupt: (groupId: string, network: 'tcp' | 'udp') => boolean,
   geodata: MockGeodataState,
   faults = false,
@@ -316,7 +316,7 @@ export function createInventory(
           ? `  ${quoteName(request.name)}: {\n    url: ${quote(request.url)}\n${options.join('')}  }\n`
           : `  ${quoteName(request.name)}: ${quote(request.url)}\n`
       );
-      const activate = await editSource(text => intoSection(text, 'subscription', line));
+      const activate = await editSource(text => intoSection(text, 'subscription', line), undefined, 'subscription');
       log('info', 'honk::subscription', 'Subscription added.', {provider: request.name});
       const finish = () => {
         activate();
@@ -336,7 +336,11 @@ export function createInventory(
       if (index < 0) return {deleted: 0};
       if (providers[index].kind === 'inline') throw new ApiError(404, 'capability_not_supported', 'The inline provider is the node section itself');
       const provider = providers[index];
-      const activate = await editSource(removedFromMain(text => readSubscriptionEntries(text).find(entry => entry.tag === provider.name)));
+      const activate = await editSource(
+        removedFromMain(text => readSubscriptionEntries(text).find(entry => entry.tag === provider.name)),
+        undefined,
+        'subscription'
+      );
       log('info', 'honk::subscription', 'Subscription removed.', {provider: provider.name});
       const finish = () => {
         activate();
@@ -351,7 +355,7 @@ export function createInventory(
       if (!scheme || !fixtures.linkSchemes.includes(scheme)) throw new ApiError(422, 'unsupported_value', `Unsupported share link scheme "${scheme ?? ''}"`);
       if (nodes.some(n => n.name === request.name)) throw new ApiError(409, 'state_conflict', `An inline node named ${request.name} already exists`);
       const line = configLine(() => `  ${quote(request.name)}: ${quote(request.link.trim())}\n`);
-      const activate = await editSource(text => intoSection(text, 'node', line));
+      const activate = await editSource(text => intoSection(text, 'node', line), undefined, 'node');
       log('info', 'honk::config', 'Node added.', {node: request.name, protocol: scheme});
       const finish = () => {
         activate();
@@ -371,7 +375,11 @@ export function createInventory(
       if (!node) return {deleted: 0};
       if (node.provider_id !== 'inline')
         throw new ApiError(404, 'capability_not_supported', 'Only inline nodes can be deleted; refresh or delete the provider instead');
-      const activate = await editSource(removedFromMain(text => readNodeEntries(text).find(entry => entry.name === node.name)));
+      const activate = await editSource(
+        removedFromMain(text => readNodeEntries(text).find(entry => entry.name === node.name)),
+        undefined,
+        'node'
+      );
       log('info', 'honk::config', 'Node removed.', {node: node.name});
       const finish = () => {
         activate();

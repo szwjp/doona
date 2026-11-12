@@ -15,7 +15,13 @@ function memoryValues(at: number) {
     cgroup_current_bytes: String(Math.round(Number(fixtures.runtimeMemory.cgroup!.current_bytes) * drift))
   };
 }
-export function createRuntime(capabilities: Capabilities, big: boolean, flowRecorder: () => RecorderState | undefined, faults = false) {
+export function createRuntime(
+  capabilities: Capabilities,
+  big: boolean,
+  flowRecorder: () => RecorderState | undefined,
+  faults = false,
+  engine: 'honk' | 'dae' = 'honk'
+) {
   const runtime = structuredClone(fixtures.runtime);
   const datapath = structuredClone(fixtures.datapath);
   if (faults) {
@@ -71,13 +77,17 @@ export function createRuntime(capabilities: Capabilities, big: boolean, flowReco
     },
     version: async signal => {
       signal?.throwIfAborted();
-      return structuredClone(fixtures.version);
+      return engine === 'dae'
+        ? {...structuredClone(fixtures.version), engine: {name: 'dae', version: 'v0.0.0-dae-demo'}, build: null}
+        : structuredClone(fixtures.version);
     },
     capabilities: async signal => {
       signal?.throwIfAborted();
       const value = structuredClone(capabilities);
       const recorder = flowRecorder();
-      if (recorder && value.resources.flows.available) value.resources.flows.recording = recorder.allowed ? recorder.mode : 'off';
+      // dae keeps a ring of closed flows whether or not a client reads it, so its recording state is not the page's
+      // on-demand switch.
+      if (engine !== 'dae' && recorder && value.resources.flows.available) value.resources.flows.recording = recorder.allowed ? recorder.mode : 'off';
       return value;
     },
     runtime: async signal => {

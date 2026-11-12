@@ -93,10 +93,10 @@ export const configMain =
   }
 ` +
   templateConfig.slice(groupEnd);
-const configRulesFile = `# Household overrides can be added here.
+export const configRulesFile = `# Household overrides can be added here.
 # This include leaves the selected routing template unchanged.
 `;
-const configSubscription = `'香港 01 IPLC': 'vless://<redacted>'
+export const configSubscription = `'香港 01 IPLC': 'vless://<redacted>'
 '香港 02 BGP': 'vless://<redacted>'
 '新加坡 01 2x': 'trojan://<redacted>'
 '日本 01 2x': 'vless://<redacted>'

@@ -3,6 +3,7 @@ import type {OperationReader} from './lifecycle';
 import type * as configurationFixtures from './fixtures/configuration';
 import type * as inventoryFixtures from './fixtures/inventory';
 import {capabilities as fullCapabilities, capabilitiesBase, capabilitiesM1} from './fixtures/capabilities';
+import {daeCapabilities, daeConfiguration} from './fixtures/dae';
 import {createConfiguration} from './configuration';
 import {createInventory} from './inventory';
 import {createLifecycle} from './lifecycle';
@@ -25,6 +26,8 @@ export type MockOptions = {
   session?: string | null;
   acceptWrites?: boolean;
   isolated?: boolean;
+  // The engine the demo backend reports: `dae` serves dae's capabilities and managed layout.
+  engine?: 'honk' | 'dae';
   fixtures?: {configuration: typeof configurationFixtures; inventory: typeof inventoryFixtures};
 };
 
@@ -44,6 +47,8 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     }
   let capabilities = fullCapabilities;
   let profile: string | null = null;
+  // ?engine=dae in the page address serves the dae scenario for this browser, and an empty ?engine= turns it off.
+  let engine: 'honk' | 'dae' = options.engine ?? 'honk';
   // The default demo is a healthy honk; the faults scenario seeds the degraded states that specs need.
   let faults = options.faults ?? false;
   let latency = 0;
@@ -59,14 +64,20 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       // can be seen in the demo.
       const slow = new URLSearchParams(globalThis.location?.search).get('slow');
       if (slow !== null) latency = Number(slow) || 2000;
+      const chosen = new URLSearchParams(globalThis.location?.search).get('engine');
+      if (chosen === 'dae') localStorage.setItem('doona-mock-engine', 'dae');
+      else if (chosen === '') localStorage.removeItem('doona-mock-engine');
+      if (options.engine === undefined && localStorage.getItem('doona-mock-engine') === 'dae') engine = 'dae';
       profile = localStorage.getItem('doona-mock-profile');
       if (profile === 'base') capabilities = capabilitiesBase;
       if (profile === 'm1') capabilities = capabilitiesM1;
     } catch {
       /* Storage can be unavailable. */
     }
-  capabilities = options.capabilities ?? capabilities;
-  const runtime = createRuntime(capabilities, big, () => configuration.flowRecorder(), faults);
+  capabilities = options.capabilities ?? (engine === 'dae' ? daeCapabilities : capabilities);
+  // The dae scenario serves its own seeded layout unless another fixture set (lite's demo) replaces it.
+  const configurationFixtures = options.fixtures?.configuration ?? (engine === 'dae' ? daeConfiguration : undefined);
+  const runtime = createRuntime(capabilities, big, () => configuration.flowRecorder(), faults, engine);
   const geodata = createGeodataState(capabilities, () => inventory.groupIds(), faults);
   const configuration = createConfiguration(
     capabilities,
@@ -85,7 +96,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     (text, revision) => inventory.activate(text, revision),
     geodata,
     faults,
-    options.fixtures?.configuration
+    configurationFixtures
   );
   const lifecycle = createLifecycle(
     capabilities.resources.logs,
