@@ -277,7 +277,7 @@ test.describe('with the base profile', () => {
       'The configuration turns off 4 recorders',
       'Geodata is unavailable',
       'Subscriptions cannot be updated for now',
-      'This honk build lacks 7 features'
+      'This build lacks 7 features'
     ]);
     await expect(rows.nth(0).locator('.rp-note')).toHaveText(
       'Configuration, Validation, Nodes and node sources, Global settings form, Outbound mode, Creating and editing groups'
@@ -354,7 +354,7 @@ test('with configuration writes and recorders off, each group names the setting 
     'The configuration is read-only',
     'The configuration turns off 4 recorders',
     'Flows are recorded only while viewed',
-    'This honk build lacks 1 feature'
+    'This build lacks 1 feature'
   ]);
   await expect(rows.nth(0).locator('.rp-note')).toHaveText('Configuration, Global settings form, Outbound mode, Editing rules');
   await expect(rows.nth(1).locator('.rp-note')).toHaveText('DNS log, Traffic history, Memory history, Logs');
