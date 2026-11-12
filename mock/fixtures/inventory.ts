@@ -3,6 +3,7 @@ import {version} from './runtime';
 import type {Group, HealthObservation, Node, Provider, GeoData} from '../../src/api/model';
 import {ago, now, observedAt} from './clock';
 import {configMain} from './configuration';
+import {daeInventoryConfig} from './dae';
 import {activateInventory} from '../activation';
 import {resolveLeaf} from '../control';
 import {defaultGeodataPreset} from '../../src/dae/geodata';
@@ -55,7 +56,7 @@ export function policyPick(group: Group): string {
 }
 // Every node answers its probes unless the faults scenario takes jp-01 and about one subscription node in sixteen down;
 // one subscription node in fifty has never been probed.
-export function nodeFixtures(count: number, faults = false): {nodes: Node[]; groups: Group[]} {
+export function nodeFixtures(count: number, faults = false, engine: 'honk' | 'dae' = 'honk'): {nodes: Node[]; groups: Group[]} {
   const nodes = [
     // The inline nodes match the links in the mock's config.dae.
     node('hk-01', 84, 91, true, 'inline', 'vless', [0.95, 1.04]),
@@ -119,7 +120,7 @@ export function nodeFixtures(count: number, faults = false): {nodes: Node[]; gro
   }
   nodes.push(...airport);
   const groups: Group[] = [];
-  activateInventory(configMain, '40', nodes, groups, structuredClone(providers), name => name);
+  activateInventory(engine === 'dae' ? daeInventoryConfig : configMain, '40', nodes, groups, structuredClone(providers), name => name, engine);
   // A manual runtime choice differs by transport, independently of its configured default.
   for (const name of ['proxy', 'office']) {
     const selected = groups.find(group => group.name === name)!;

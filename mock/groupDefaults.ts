@@ -14,19 +14,23 @@ export function groupConfig(kind: Group['policy']['kind']): Group['config'] {
     interrupt_connections: false
   };
 }
-export function groupCapabilities(kind: Group['policy']['kind']): Group['capabilities'] {
+export function groupCapabilities(kind: Group['policy']['kind'], engine: 'honk' | 'dae' = 'honk'): Group['capabilities'] {
   return {
     can_select: kind === 'selector',
     can_override: kind !== 'selector',
     supports_nested_groups: true,
-    mutable_config: [
-      'policy',
-      'default_member_id',
-      'final_outbound',
-      ...(kind === 'selector' ? [] : (['check_url', 'idle_timeout'] as const)),
-      'tolerance',
-      'interrupt_connections'
-    ],
+    // dae patches only the interval and the tolerance over the API; every other group field is the text editor's.
+    mutable_config:
+      engine === 'dae'
+        ? ['check_interval', 'tolerance']
+        : [
+            'policy',
+            'default_member_id',
+            'final_outbound',
+            ...(kind === 'selector' ? [] : (['check_url', 'idle_timeout'] as const)),
+            'tolerance',
+            'interrupt_connections'
+          ],
     probe_transports: ['tcp', 'udp']
   };
 }

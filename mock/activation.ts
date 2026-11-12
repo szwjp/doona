@@ -35,7 +35,8 @@ export function activateInventory(
   nodes: Node[],
   groups: Group[],
   providers: Provider[],
-  newGroupId: (name: string) => string = uuid
+  newGroupId: (name: string) => string = uuid,
+  engine: 'honk' | 'dae' = 'honk'
 ) {
   const {blocks, tokens} = scanConfig(text);
   const fields = (section: string) => blocks.filter(block => block.name === section).flatMap(block => blockFields(text, block, tokens));
@@ -90,7 +91,7 @@ export function activateInventory(
     ];
     for (const node of memberNodes) memberships.get(node.id)!.push(ids.get(entry.name)!);
     const native = entry.policy ?? 'fixed(0)';
-    const kind = policyKind(native) ?? 'selector';
+    const kind = policyKind(native, engine) ?? 'selector';
     const config = groupConfig(kind);
     const block = blocks
       .filter(block => block.name === 'group')
@@ -152,7 +153,7 @@ export function activateInventory(
           }))
         )
       },
-      capabilities: groupCapabilities(kind)
+      capabilities: groupCapabilities(kind, engine)
     };
   });
   for (const group of nextGroups) {
