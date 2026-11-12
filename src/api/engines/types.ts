@@ -50,6 +50,8 @@ export type EngineReason =
   | {code: 'config-unloaded'}
   // Configuration writes are turned off.
   | {code: 'writes-off'; settings: EngineSetting[]}
+  // The configuration directory is not laid out the way the engine requires for writes, which no setting fixes.
+  | {code: 'layout-unmanaged'}
   // The main file refuses node and subscription edits.
   | {code: 'main-file-read-only'}
   // Geodata has no built-in download URLs: the engine takes them from the configuration, from these settings.

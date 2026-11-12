@@ -67,6 +67,13 @@ describe('dae', () => {
     for (const subject of ['create', 'global_settings', 'mode', 'rule_edit', 'group_edit', 'restore'] satisfies EngineSubject[])
       expect(dae.reason(subject, capabilities)).toBeUndefined();
     expect(dae.reason('config', patched({config: {available: false}}))).toEqual({code: 'config-unloaded'});
+    // With the layout unmanaged no setting fixes it, so the switch is not offered.
+    const unmanaged = {
+      ...readOnly,
+      resources: {...readOnly.resources, config: {...readOnly.resources.config, 'x-dae': {layout: {kind: 'unmanaged', reason: 'layout_unmanaged'}}} as never}
+    };
+    expect(dae.reason('config', unmanaged)).toEqual({code: 'layout-unmanaged'});
+    expect(dae.reason('global_settings', unmanaged)).toEqual({code: 'layout-unmanaged'});
   });
 
   it('explains node edits, services and what dae never switches on', () => {

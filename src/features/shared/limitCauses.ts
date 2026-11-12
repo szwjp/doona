@@ -52,6 +52,7 @@ const reasonCause: Partial<Record<EngineReason['code'], LimitCause>> = {
   'geodata-mismatch': 'geodataUnreadable',
   'config-unloaded': 'configNotLoaded',
   'writes-off': 'configReadOnly',
+  'layout-unmanaged': 'configReadOnly',
   'start-flag': 'startFlag',
   'state-db-closed': 'stateDb'
 };
