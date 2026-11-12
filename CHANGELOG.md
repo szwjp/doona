@@ -6,6 +6,12 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.9] - 2026-11-12
+
+### Fixed
+
+- A rule whose condition quotes a parameter is anchored again: the engine drops the quotes when it renders an expression, and only the condition ignores them, so the DNS upstream name `'my dns'` still has to match exactly.
+
 ## [0.1.0-rc.8] - 2026-11-12
 
 ### Fixed
@@ -1102,7 +1108,8 @@ Entries live in [changes/](changes/) until release.
 
 - Keep table columns and action cells visible and prevent cards and controls from overflowing.
 
-[Unreleased]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.8...HEAD
+[Unreleased]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.9...HEAD
+[0.1.0-rc.9]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.8...v0.1.0-rc.9
 [0.1.0-rc.8]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.7...v0.1.0-rc.8
 [0.1.0-rc.7]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.6...v0.1.0-rc.7
 [0.1.0-rc.6]: https://github.com/Zakkaus/doona/compare/v0.1.0-rc.5...v0.1.0-rc.6

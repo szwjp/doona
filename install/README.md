@@ -37,25 +37,25 @@ The Gentoo template keeps the existing `metadata.xml`; no version-specific metad
 
 ## Version spellings
 
-The recipes use tag `v0.1.0-rc.8`. Release assets keep the upstream version without the tag's `v`;
+The recipes use tag `v0.1.0-rc.9`. Release assets keep the upstream version without the tag's `v`;
 package metadata follows each package manager's ordering rules. The same names and versions apply to `doona-fonts` and
 `doona-precompressed`, which the deb names `doona-web-fonts` and `doona-web-precompressed`.
 
 | Format                                | `doona` asset                                 | Version in package or recipe                     |
 | ------------------------------------- | --------------------------------------------- | ------------------------------------------------ |
-| Program archive                       | `doona-0.1.0-rc.8.tar.gz`                     | n/a                                              |
-| Fonts archive                         | `doona-fonts-0.1.0-rc.8.tar.gz`               | n/a                                              |
-| Precompressed archive                 | `doona-precompressed-0.1.0-rc.8.tar.gz`       | n/a                                              |
-| Debian                                | `doona-web_0.1.0-rc.8-1_all.deb`              | `0.1.0~rc.8-1`                                   |
-| RPM                                   | `doona-0.1.0-rc.8-1.noarch.rpm`               | Version `0.1.0~rc.8`, Release `1`                |
-| OpenWrt ipk (24.10 and earlier, opkg) | `doona_0.1.0-rc.8-1_all.ipk`                  | `0.1.0~rc.8-1`                                   |
+| Program archive                       | `doona-0.1.0-rc.9.tar.gz`                     | n/a                                              |
+| Fonts archive                         | `doona-fonts-0.1.0-rc.9.tar.gz`               | n/a                                              |
+| Precompressed archive                 | `doona-precompressed-0.1.0-rc.9.tar.gz`       | n/a                                              |
+| Debian                                | `doona-web_0.1.0-rc.9-1_all.deb`              | `0.1.0~rc.9-1`                                   |
+| RPM                                   | `doona-0.1.0-rc.9-1.noarch.rpm`               | Version `0.1.0~rc.9`, Release `1`                |
+| OpenWrt ipk (24.10 and earlier, opkg) | `doona_0.1.0-rc.9-1_all.ipk`                  | `0.1.0~rc.9-1`                                   |
 | OpenWrt apk (25.12, apk-tools 3)      | `doona-0.1.0_rc6-r1.apk`                      | `0.1.0_rc6-r1`                                   |
-| Alpine apk                            | `doona-0.1.0-rc.8-r0.alpine.apk`              | `0.1.0_rc8-r0`                                   |
+| Alpine apk                            | `doona-0.1.0-rc.9-r0.alpine.apk`              | `0.1.0_rc9-r0`                                   |
 | Arch                                  | `doona-0.1.0rc5-1-any.pkg.tar.zst`            | pkgver `0.1.0rc5`, pkgrel `1`, default epoch `0` |
 | Alpine APKBUILD                       | Download the three archives above             | pkgver `0.1.0_rc6`, pkgrel `0`                   |
 | Gentoo ebuild                         | Download the program and fonts archives above | PV `0.1.0_rc6`                                   |
 | OpenWrt Makefile                      | Download the three archives above             | PKG_VERSION `0.1.0_rc6`, PKG_RELEASE `1`         |
-| Nix recipe                            | Download the program and fonts archives above | `0.1.0-rc.8`                                     |
+| Nix recipe                            | Download the program and fonts archives above | `0.1.0-rc.9`                                     |
 
 The beta binary recipes were last exercised against a local `pnpm package` build: `abuild -r` in an Alpine 3.22
 container, the OpenWrt SDK for 24.10 (ipk) and 25.12 (apk), and nfpm 2.47 for deb, rpm, ipk and Arch, each
