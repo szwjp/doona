@@ -1,28 +1,37 @@
 import {expect, it} from 'vitest';
 import {engineOf} from '../api/engines';
 import {version} from '../../mock/fixtures';
-import {globalKeys} from './vocab';
+import {globalKeys, type Dialect} from './vocab';
 import {serializeSetting, settingGroups, settingValue, writeSettings} from './settings';
 import en from '../i18n/locales/en.json';
 import zhTW from '../i18n/locales/zh-TW.json';
 import zhCN from '../i18n/locales/zh-CN.json';
+// honk's schema drives the scalar-shape cases below; both engines' schemas are checked against their own vocabulary.
 const schema = engineOf(version).globalSettings!;
+const schemas: Array<[Dialect, NonNullable<ReturnType<typeof engineOf>['globalSettings']>]> = [
+  ['honk', schema],
+  ['dae', engineOf({engine: {name: 'dae', version: 'v0.9.0'}}).globalSettings!]
+];
 const catalogues: Array<[string, Record<string, unknown>]> = [
   ['en', en],
   ['zh-TW', zhTW],
   ['zh-CN', zhCN]
 ];
-it.each(schema.fields.flatMap(field => catalogues.map(([lang, messages]) => [field.key, lang, field, messages] as const)))(
-  '%s has a group, and a label and group title in %s',
-  (key, _lang, field, messages) => {
-    expect(schema.fields.filter(other => other.key === key)).toHaveLength(1);
-    expect(Object.keys(settingGroups)).toContain(field.group);
-    expect(messages[field.label]).toEqual(expect.any(String));
-    expect(messages[settingGroups[field.group]]).toEqual(expect.any(String));
-  }
-);
-it('covers every parsed global key and rejects invalid scalar shapes', () => {
-  expect(schema.fields.map(field => field.key).sort()).toEqual([...globalKeys].sort());
+it.each(
+  schemas.flatMap(([engine, section]) =>
+    section.fields.flatMap(field => catalogues.map(([lang, messages]) => [engine, field.key, lang, field, messages] as const))
+  )
+)('%s %s has a group, and a label and group title in %s', (engine, key, _lang, field, messages) => {
+  const section = schemas.find(([id]) => id === engine)![1];
+  expect(section.fields.filter(other => other.key === key)).toHaveLength(1);
+  expect(Object.keys(settingGroups)).toContain(field.group);
+  expect(messages[field.label]).toEqual(expect.any(String));
+  expect(messages[settingGroups[field.group]]).toEqual(expect.any(String));
+});
+it.each(schemas)('covers every global key %s parses, and no other', (engine, section) => {
+  expect(section.fields.map(field => field.key).sort()).toEqual([...globalKeys[engine]].sort());
+});
+it('rejects invalid scalar shapes', () => {
   for (const field of schema.fields) {
     expect(serializeSetting(field, "x'\n} routing { fallback: block")).toBeNull();
     if (field.type === 'integer') {

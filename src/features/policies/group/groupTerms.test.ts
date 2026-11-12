@@ -63,7 +63,12 @@ import {hookHarness} from '../../../store/testHelpers';
 import {useGroupDialog} from './useGroupDialog';
 import {translate, type Translator} from '../../../i18n';
 vi.mock('react', async original => ({...(await original<typeof import('react')>()), ...hookHarness.hooks}));
-vi.mock('../../../store', () => ({useCapabilities: () => ({data: undefined}), useNodes: () => ({data: []}), useProviders: () => ({data: undefined})}));
+vi.mock('../../../store', () => ({
+  useCapabilities: () => ({data: undefined}),
+  useNodes: () => ({data: []}),
+  useProviders: () => ({data: undefined}),
+  useVersion: () => ({data: {engine: {name: 'honk', version: 'v0.1.0'}}})
+}));
 const config = vi.hoisted(() => ({data: undefined as {sources: unknown[]} | undefined}));
 vi.mock('../../../store/config', () => ({useConfig: () => ({data: config.data})}));
 vi.mock('../../../shell/draft', () => ({useDraftGuard: () => ({clear: vi.fn()}), useDialogSession: () => ({next: vi.fn(), start: () => () => true})}));

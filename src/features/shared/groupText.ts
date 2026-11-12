@@ -1,7 +1,7 @@
 import type {ConfigSource, Group, HealthObservation} from '../../api/model';
 import {isWritableName, nestedIn, readGroupEntries, type GroupEntry} from '../../dae/groups';
 import {unquote} from '../../dae/text';
-import {builtinOutboundNames} from '../../dae/vocab';
+import {builtinOutboundNames, type Dialect} from '../../dae/vocab';
 import {formatLatency} from '../../i18n/format';
 import type {Key, Translator} from '../../i18n';
 import {latencyTone, type NodeStatus} from '../../ui/ui';
@@ -23,8 +23,8 @@ export const groupConfigLabels = {
 // member only under manual selection, so it follows `policy`, the one the dialog has selected.
 const routeFieldOrder = ['default_member_id', 'final_outbound'] as const;
 export type RouteField = (typeof routeFieldOrder)[number];
-export const routeFields = (g: Group | undefined, policy: string | null): RouteField[] =>
-  g ? routeFieldOrder.filter(field => g.capabilities.mutable_config.includes(field) && (field !== 'default_member_id' || manualPolicy(policy))) : [];
+export const routeFields = (g: Group | undefined, policy: string | null, dialect: Dialect = 'honk'): RouteField[] =>
+  g ? routeFieldOrder.filter(field => g.capabilities.mutable_config.includes(field) && (field !== 'default_member_id' || manualPolicy(policy, dialect))) : [];
 // Picker ids carry the value behind a prefix, so None cannot collide with a name.
 export const routeChoiceId = (value: string | null) => (value === null ? 'none' : `=${value}`);
 export const routeChoiceValue = (id: string) => (id.startsWith('=') ? id.slice(1) : null);

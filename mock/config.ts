@@ -11,7 +11,7 @@ type Stored = ConfigSource & {content: string};
 
 const sections = new Set(['global', 'subscription', 'node', 'group', 'dns', 'routing', 'upstream', 'request', 'response', 'include', 'experimental']);
 const builtinOutbounds = new Set(vocab.builtinOutbounds);
-const globalKeys = new Set(vocab.globalKeys);
+const globalKeys = new Set(vocab.globalKeys.honk);
 
 const lineCount = (text: string) => (text === '' ? 0 : text.replace(/\n$/, '').split('\n').length);
 export async function stored({onDisk, ...draft}: Draft): Promise<Stored> {

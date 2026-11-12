@@ -10,15 +10,28 @@ it('recognises exactly the built-in outbounds, with and without (must)', () => {
 });
 
 it('offers new groups only policies the engine accepts', () => {
-  for (const {id} of newGroupPolicies) {
-    expect(policies).toContain(id);
-    expect(policyKind(id)).toBeDefined();
-  }
+  for (const dialect of ['honk', 'dae'] as const)
+    for (const {id} of newGroupPolicies[dialect]) {
+      expect(policies[dialect]).toContain(id);
+      expect(policyKind(id, dialect)).toBeDefined();
+    }
 });
 
-it('offers score, which the engine knows as its own kind', () => {
-  expect(newGroupPolicies.map(item => item.id)).toContain('score');
+it('reads dae policies as dae does, where fixed and random are their own kinds and min* picks by latency', () => {
+  const kinds = {select: 'selector', fixed: 'fixed', random: 'random', min: 'urltest', min_avg10: 'urltest', min_moving_avg: 'urltest'} as const;
+  for (const [name, kind] of Object.entries(kinds)) {
+    expect(policyKind(name, 'dae')).toBe(kind);
+    expect(policyKind(` ${name.toUpperCase()} (0) `, 'dae')).toBe(kind);
+  }
+  // honk's own policies and legacy spellings are not dae's.
+  for (const name of ['score', 'fallback', 'roundrobin', 'loadbalance', 'urltest', 'min_last_delay', 'selector'])
+    expect(policyKind(name, 'dae')).toBeUndefined();
+});
+
+it('offers score to honk, which knows it as its own kind', () => {
+  expect(newGroupPolicies.honk.map(item => item.id)).toContain('score');
   expect(policyKind('score')).toBe('score');
+  expect(newGroupPolicies.dae.map(item => item.id)).not.toContain('score');
 });
 
 it('reads policies as honk does: its aliases and legacy selector fallbacks, any case, arguments ignored', () => {
