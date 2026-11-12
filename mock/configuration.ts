@@ -4,14 +4,14 @@ import {ApiError} from '../src/api/error';
 import {logLevelLabels} from '../src/api/selectors';
 import * as standardFixtures from './fixtures/configuration';
 import {found} from './common';
-import {diagnose, includedFiles, includePaths, sectionLines, stored, validate} from './config';
+import {diagnose, honkRestartOnly, includedFiles, includePaths, sectionLines, stored, validate} from './config';
 import {globMatch, newSourcePathProblem, resolveIncludePath} from '../src/dae/newSource';
 import type {MockLifecycle} from './lifecycle';
 import type {MockGeodataState} from './geodata';
 import {faultRules} from './rules';
 import {dnsRulesOf} from './dnsRules';
 import {dnsUpstreamNames} from '../src/dae/ruleText';
-import {unquote} from '../src/dae/text';
+import {scanConfig, unquote} from '../src/dae/text';
 import {createRevisions} from './revisions';
 import {createRecording} from './recording';
 import {readGroupEntries} from '../src/dae/groups';
@@ -35,6 +35,16 @@ type ConfigurationApi = Pick<
   | 'startResume'
 >;
 type Effects = Pick<MockLifecycle, 'enqueue' | 'log' | 'publish' | 'eventData'> & {trimRecords(): void};
+// The seed a scenario serves: its settings, sources and rule IDs. dae's demo reuses honk's content in its own layout.
+export type ConfigurationFixtures = Pick<
+  typeof standardFixtures,
+  'runtimeSettings' | 'faultSettings' | 'configSources' | 'faultSources' | 'faultDisk' | 'configRules' | 'configNotes'
+> & {
+  // Sources the engine reads but never lists, such as dae's api.dae: includes resolve and validation sees them.
+  hiddenSources?: typeof standardFixtures.configSources;
+  // Global settings a reload refuses to change; dae applies all of them on reload.
+  restartOnly?: readonly string[];
+};
 export function createConfiguration(
   capabilities: Capabilities,
   runtime: Pick<Runtime, 'generation' | 'lifecycle'>,
@@ -43,9 +53,10 @@ export function createConfiguration(
   activateInventory: (text: string, revision: string) => void,
   geodata: MockGeodataState,
   faults = false,
-  fixtures: typeof standardFixtures = standardFixtures
+  fixtures: ConfigurationFixtures = standardFixtures
 ) {
   const configured = faults ? fixtures.faultSettings : fixtures.runtimeSettings;
+  const restartOnly = fixtures.restartOnly ?? honkRestartOnly;
   const settings = structuredClone(configured);
   const recording = createRecording(settings);
   const withGeodata = () => {
@@ -60,15 +71,16 @@ export function createConfiguration(
   const loadSources = () =>
     (loading ??= Promise.all([
       Promise.all((faults ? fixtures.faultSources : fixtures.configSources).map(stored)),
+      Promise.all((fixtures.hiddenSources ?? []).map(stored)),
       faults ? Promise.all(fixtures.faultDisk.map(stored)) : null
-    ]).then(async ([list, files]) => {
+    ]).then(async ([list, hidden, files]) => {
       sources = list;
-      disk = files ?? [...list];
+      disk = [...(files ?? list), ...hidden];
       await revisions.initialize(list);
       return list;
     }));
   const revisions = createRevisions(capabilities, enqueue, loadSources, candidate => {
-    const check = validate({sources: sourceSet(undefined, candidate), mode: 'full'}, String(configRevision), {active: sourceSet()});
+    const check = validate({sources: sourceSet(undefined, candidate), mode: 'full'}, String(configRevision), {active: sourceSet(), restartOnly});
     if (!check.valid) throw new ApiError(422, 'unsupported_value', 'Revision validation failed', null, {diagnostics: check.diagnostics});
     disk = candidate as typeof disk;
     return advance();
@@ -113,12 +125,22 @@ export function createConfiguration(
     publish({id: '', event: 'generation.changed', data: {...eventData(), generation_id: generation, previous_generation_id: String(configRevision - 1)}});
     return generation;
   }
-  // Node/provider writes target main; a group PATCH targets its last accepted declaration.
-  async function editSource(edit: (text: string) => string, groupName?: string) {
+  // The writable source a write of `section` goes to: the file that holds it (the main file first), else the writable
+  // main file, else the first writable source. An engine may keep its entry file read-only, as dae does.
+  function writeTarget(section: string | undefined) {
+    const writable = disk.filter(source => source.writable);
+    const main = writable.find(source => source.kind === 'main');
+    if (!section) return main ?? writable[0];
+    const holds = writable.filter(source => scanConfig(source.content).blocks.some(block => block.name === section));
+    return holds.find(source => source.kind === 'main') ?? holds[0] ?? main ?? writable[0];
+  }
+  // Node and provider writes target the file that holds their section; a group PATCH targets its last accepted
+  // declaration.
+  async function editSource(edit: (text: string) => string, groupName?: string, section?: string) {
     await loadSources();
     const id =
       groupName === undefined
-        ? disk.find(source => source.kind === 'main')?.id
+        ? writeTarget(section)?.id
         : sourceSet()
             .filter(source => readGroupEntries(source.content).some(group => group.name === groupName))
             .at(-1)?.id;
@@ -224,7 +246,8 @@ export function createConfiguration(
           ...list.filter(ruleFile).flatMap(source => diagnose(source.id, source.content, known, 'full').filter(item => item.level !== 'error')),
           ...(faults ? fixtures.configNotes : [])
         ],
-        'x-honk': {store: revisions.store()},
+        // Only an engine with the configuration extension reports its store.
+        ...(capabilities.extensions?.['x-honk'] ? {'x-honk': {store: revisions.store()}} : {}),
         secrets_redacted: true
       };
     },
@@ -234,7 +257,7 @@ export function createConfiguration(
       if (!capabilities.resources.config_validate.modes?.includes(request.mode))
         throw new ApiError(400, 'invalid_request', `Mode ${request.mode} is not advertised`);
       if (request.mode === 'full') await loadSources();
-      return validate(request, String(configRevision), {local: disk.filter(ruleFile), active: sourceSet()});
+      return validate(request, String(configRevision), {local: disk.filter(ruleFile), active: sourceSet(), restartOnly});
     },
     // Global write admission precedes HTTP checks; source permission and revision checks follow the body limits.
     replaceConfigSource: async (sourceId, content, ifMatch, signal) => {
@@ -253,7 +276,7 @@ export function createConfiguration(
       if (ifMatch.replace(/^"|"$/g, '') !== source.content_sha256)
         throw new ApiError(412, 'stale_revision', 'The source changed on disk; fetch it again before retrying');
       const candidate = sourceSet({id: sourceId, content});
-      const check = validate({sources: candidate, mode: 'full'}, String(configRevision), {active: sourceSet()});
+      const check = validate({sources: candidate, mode: 'full'}, String(configRevision), {active: sourceSet(), restartOnly});
       if (!check.valid) throw new ApiError(422, 'unsupported_value', 'Validation found errors; nothing was written', null, {diagnostics: check.diagnostics});
       const next = await stored({...source, content, loaded_at: new Date().toISOString()});
       const record = await revisions.prepare(
@@ -310,7 +333,7 @@ export function createConfiguration(
       }
       const next = await stored({id: `src-new-${++created}`, path: target, kind: 'include', writable: true, loaded_at: new Date().toISOString(), content});
       vacant();
-      const check = validate({sources: sourceSet(undefined, [...disk, next]), mode: 'full'}, String(configRevision), {active: sourceSet()});
+      const check = validate({sources: sourceSet(undefined, [...disk, next]), mode: 'full'}, String(configRevision), {active: sourceSet(), restartOnly});
       if (!check.valid) throw new ApiError(422, 'unsupported_value', 'Validation found errors; nothing was written', null, {diagnostics: check.diagnostics});
       const record = await revisions.prepare([...disk, next], 'write');
       vacant();
