@@ -29,6 +29,10 @@ type Placement = {
   // honk resolves DNS upstream names without regard to case, so the list may spell one differently from the source.
   foldCase?: boolean;
   bareInclude?: boolean;
+  // How the target text compares. Routing targets drop quotes and expand the
+  // must_ shorthand; a DNS upstream keeps its quotes because they are part of
+  // the key honk matches.
+  normalize?: (value: string) => string;
 };
 
 const compact = (value: string) =>
@@ -36,6 +40,20 @@ const compact = (value: string) =>
     .tokens.filter(token => token.kind !== 'comment')
     .map(token => value.slice(token.from, token.to))
     .join('');
+
+// The engine reports a locked target as `proxy("must")` and expands the
+// `must_direct` shorthand to `direct("must")`, while the configuration may spell
+// either form; a DNS upstream may also be quoted in the source. A target therefore
+// compares after quotes are dropped and the must_ shorthand is expanded.
+const normalizeTarget = (value: string) => value.replace(/['"]/g, '').replace(/^must_(.+)$/, '$1(must)');
+
+// The target to compare with, from what the API reports. The engine already
+// expands must into the outbound text; a backend that reports the bare name and
+// the flag separately gets the suffix added here.
+const apiTarget = (outbound: string, must: boolean) => {
+  const base = outbound.replace(/['"]/g, '');
+  return must && !/\(must\)$/.test(base) ? `${base}(must)` : base;
+};
 
 function anchorAt(source: ConfigSource, rule: Listed, place: Placement, scan?: ReturnType<typeof scanConfig>): RuleAnchor | null {
   if (!rule.source || rule.source.source_id !== source.id) return null;
@@ -64,12 +82,17 @@ function anchorAt(source: ConfigSource, rule: Listed, place: Placement, scan?: R
   // the comparison; the line itself still has to hold this rule.
   const unquoted = (value: string) => value.replace(/['"]/g, '');
   const bare = (from: number, to: number) => compact(text.slice(from, to));
+  const normalize = place.normalize ?? ((value: string) => value);
   const arrow = fallback ? actual[1] : actual.find(token => token.parens === 0 && text.slice(token.from, token.to) === '->');
-  const target = compact(place.target);
-  if (!arrow || fold(bare(arrow.to, last.to)) !== fold(target)) return null;
+  const target = normalize(compact(place.target));
+  if (!arrow || fold(normalize(bare(arrow.to, last.to))) !== fold(target)) return null;
   // The display expression may end with its target, as the contract shows it (`pname(curl) -> direct`), or not.
+  // The engine expands `must_direct` and drops quotes there, so the tail is compared after the same
+  // normalization and the condition is sliced at the arrow, not by the target's length.
   const shown = compact(rule.expression);
-  const condition = fold(shown).endsWith(fold('->' + target)) ? shown.slice(0, -target.length - 2) : shown;
+  const shownArrow = shown.lastIndexOf('->');
+  const shownTarget = shownArrow < 0 ? '' : normalize(shown.slice(shownArrow + 2));
+  const condition = shownArrow >= 0 && fold(shownTarget) === fold(target) ? shown.slice(0, shownArrow) : shown;
   // Only the condition ignores quotes: a target such as the DNS upstream
   // `'my dns'` names a key, and its quotes are part of that name.
   if (!fallback && !rule.expression.includes('<redacted>') && unquoted(bare(first.from, arrow.from)) !== unquoted(condition)) return null;
@@ -95,7 +118,8 @@ export function ruleAnchor(source: ConfigSource, rule: RoutingRule, scan?: Retur
       within: blocks => blocks.filter(block => block.name === 'routing'),
       fallbacks: ['fallback'],
       bareInclude: true,
-      target: (rule.outbound ?? '') + (rule.must ? '(must)' : '')
+      normalize: normalizeTarget,
+      target: apiTarget(rule.outbound ?? '', rule.must)
     },
     scan
   );

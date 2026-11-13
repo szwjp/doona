@@ -38,6 +38,28 @@ it('anchors a rule whose configuration quotes a parameter the display drops', ()
   expect(anchor!.text).toBe("  dip(224.0.0.0/3, 'ff00::/8') -> direct\n");
 });
 
+it('anchors must rules in the spellings the engine reports', () => {
+  // The engine expands `must_direct` to `direct("must")` and keeps `proxy(must)`
+  // as `proxy("must")`, while the source may write either the shorthand or the
+  // parameter form. Both have to locate the same line.
+  const locked = 'routing {\n  mac(00:e0:4c:2c:1a:b5) -> must_direct\n  dip(1.1.1.1, 1.0.0.1) && dport(443) -> proxy(must)\n  fallback: direct\n}\n';
+  const listed = (expression: string, outbound: string, line: number): RoutingRule => ({
+    rule_id: `r${line}`,
+    index: line - 2,
+    kind: 'rule',
+    expression,
+    outbound,
+    must: true,
+    source: {file: 'routing.dae', source_id: 'source', line, column: null}
+  });
+  const direct = listed('mac(00:e0:4c:2c:1a:b5) -> direct(must)', 'direct("must")', 2);
+  const proxy = listed('dip(1.1.1.1, 1.0.0.1) && dport(443) -> proxy(must)', 'proxy("must")', 3);
+  expect(ruleAnchor({id: 'source', content: locked} as ConfigSource, direct)?.text).toBe('  mac(00:e0:4c:2c:1a:b5) -> must_direct\n');
+  expect(ruleAnchor({id: 'source', content: locked} as ConfigSource, proxy)?.text).toBe('  dip(1.1.1.1, 1.0.0.1) && dport(443) -> proxy(must)\n');
+  // A backend that reports the bare name and the flag separately resolves to the same line.
+  expect(ruleAnchor({id: 'source', content: locked} as ConfigSource, {...direct, outbound: 'direct'})?.text).toBe('  mac(00:e0:4c:2c:1a:b5) -> must_direct\n');
+});
+
 it('refuses changed source anchors, unavailable identities and non-routing locations', () => {
   const anchor = ruleAnchor(source, rule)!;
   const changed = text.replace('mix', 'block');
