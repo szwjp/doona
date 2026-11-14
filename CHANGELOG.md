@@ -6,6 +6,13 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.17] - 2026-11-14
+
+### Changed
+
+- The settings page talks about one address only: the backend URL. The engine's
+  bind address is an implementation detail and is no longer shown.
+
 ## [0.1.0-rc.16] - 2026-11-14
 
 ### Fixed

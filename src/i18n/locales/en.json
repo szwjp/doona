@@ -1977,8 +1977,6 @@
   "settings.lensPauseHelp": "Keeps scrolling smooth. Edges bend again once the page stops.",
   "settings.limitNotice": "Show the off-feature count on the status card",
   "settings.limitNoticeHelp": "Shows how many features are off on the Activity status card. When off, it says View details; the full list stays in System Status.",
-  "settings.listenerHelp": "The address dae binds. A wildcard such as 0.0.0.0 is not dialable; the backend URL above is how this browser reaches it.",
-  "settings.listenerLabel": "Engine listener",
   "settings.logBuffer": "Log records kept",
   "settings.logLevel": "Log level",
   "settings.mirror": "Mirrored layout",

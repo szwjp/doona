@@ -1767,8 +1767,6 @@
   "settings.lensPauseHelp": "捲動更流暢，頁面停下後邊緣恢復折射。",
   "settings.limitNotice": "狀態卡顯示未開啟功能數",
   "settings.limitNoticeHelp": "在活動頁的狀態卡上顯示未開啟的功能數量；關閉後改顯示「檢視詳情」，完整清單仍在系統狀態。",
-  "settings.listenerHelp": "dae 實際綁定的位址。0.0.0.0 這類萬用位址不能直接連線；上方的後端網址才是本瀏覽器使用的位址。",
-  "settings.listenerLabel": "引擎監聽位址",
   "settings.logBuffer": "日誌保留筆數",
   "settings.logLevel": "日誌等級",
   "settings.mirror": "鏡像版面",

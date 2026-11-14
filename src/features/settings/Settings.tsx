@@ -49,7 +49,6 @@ export function Settings({query}: PageProps) {
   const {
     activeId,
     hosted,
-    listener,
     staleLogin,
     loginReason,
     firstRun,
@@ -162,19 +161,6 @@ export function Settings({query}: PageProps) {
               isReadOnly={hosted}
             />
           </div>
-          {listener && (
-            <div className="rp-contents">
-              <TextField
-                label={t('settings.listenerLabel')}
-                description={t('settings.listenerHelp')}
-                name="listener"
-                value={listener}
-                onChange={() => undefined}
-                isReadOnly
-                spellCheck={false}
-              />
-            </div>
-          )}
           {demo ? null : passwordMode ? (
             <p className="rp-label">{t('settings.passwordMode')}</p>
           ) : (
