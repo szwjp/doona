@@ -295,8 +295,11 @@ export function createInventory(
       if (!capabilities.resources.providers.can_manage) throw new ApiError(404, 'capability_not_supported', 'Provider management is unavailable');
       if (!/^https?:\/\//.test(request.url)) throw new ApiError(422, 'unsupported_value', 'The subscription URL must start with http:// or https://');
       if (providers.some(item => item.name === request.name)) throw new ApiError(409, 'state_conflict', `A provider named ${request.name} already exists`);
-      const url = URL.parse(request.url);
-      if (!url) throw new ApiError(422, 'unsupported_value', 'The subscription URL cannot be parsed');
+      try {
+        new URL(request.url);
+      } catch {
+        throw new ApiError(422, 'unsupported_value', 'The subscription URL cannot be parsed');
+      }
       const {update_interval: interval, user_agent: agent, cache} = request;
       const offered = capabilities.resources.providers.create_options ?? {};
       if (

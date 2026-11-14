@@ -1,6 +1,6 @@
 import {afterEach, expect, it, vi} from 'vitest';
 import {createMockApi} from './index';
-import {createPager} from './common';
+import {createPager, displayUrl} from './common';
 
 afterEach(() => vi.useRealTimers());
 it('continues the retained DNS snapshot after deleting its first entry', async () => {
@@ -103,4 +103,16 @@ it('counts UTF-8 bytes when a DNS log response ends before its row limit', () =>
   const first = page(rows);
   expect(first.items).toEqual(rows.slice(0, 1));
   expect(page(rows, {cursor: first.next_cursor!}).items).toEqual(rows.slice(1, 2));
+});
+
+it('parses demo URLs without the static URL.parse method older browsers lack', () => {
+  const original = (URL as unknown as {parse?: unknown}).parse;
+  (URL as unknown as {parse?: unknown}).parse = undefined;
+  try {
+    expect(displayUrl('https://example.com/geosite.dat')).toBe('https://example.com/geosite.dat');
+    expect(displayUrl('not a url')).toBeNull();
+    expect(displayUrl('')).toBeNull();
+  } finally {
+    (URL as unknown as {parse?: unknown}).parse = original;
+  }
 });

@@ -76,7 +76,13 @@ export function found<T>(value: T | undefined, kind: string): T {
   return value;
 }
 // Ordinary URL credentials remain visible; these demo URLs contain no listener secrets.
+// `URL.parse` is a recent static method (Safari 18+); this panel also runs on older browsers, so parse with the
+// constructor and let it throw.
 export function displayUrl(value: string): string | null {
-  const url = URL.parse(value);
-  return url ? value : null;
+  try {
+    new URL(value);
+    return value;
+  } catch {
+    return null;
+  }
 }
