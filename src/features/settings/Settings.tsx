@@ -163,7 +163,7 @@ export function Settings({query}: PageProps) {
             />
           </div>
           {listener && (
-            <div className="rp-contents" data-setting="listener">
+            <div className="rp-contents">
               <TextField
                 label={t('settings.listenerLabel')}
                 description={t('settings.listenerHelp')}

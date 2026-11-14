@@ -6,6 +6,14 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.16] - 2026-11-14
+
+### Fixed
+
+- The release job still runs only actions: publishing the draft is a second
+  action call, not a shell step.
+- The read-only listener field is not a searchable settings control.
+
 ## [0.1.0-rc.15] - 2026-11-14
 
 ### Fixed

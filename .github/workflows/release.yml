@@ -309,13 +309,9 @@ jobs:
             release/doona-openwrt.pem
             release/SHA256SUMS
       # The action above uploads into a draft, so a failed asset never leaves a
-      # half-populated public release. Publish only after every file landed.
-      - name: Publish the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          gh release edit "$TAG" --draft=false
-          gh release view "$TAG" --json isDraft,isPrerelease,url --jq '"published \(.url) prerelease=\(.isPrerelease)"'
+      # half-populated public release. This second call publishes the same
+      # release once every file landed; it carries no files and runs no code.
+      - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        with:
+          draft: false
+          prerelease: ${{ env.PRERELEASE != '' }}
