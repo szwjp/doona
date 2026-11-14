@@ -328,7 +328,7 @@ release `vX.Y.Z[-pre.N]`. Mark GitHub releases for pre-release versions as
 pre-releases. Update the declared version and changelog before tagging.
 Publish in two phases so honk embeds the same doona version:
 
-1. Let the tagged release workflow build the standalone UI, fonts, precompressed assets and packages. Review and publish its draft before building honk. The workflow does not bundle honk.
+1. Let the tagged release workflow build the standalone UI, fonts, precompressed assets and packages. It uploads them to a draft and publishes the release automatically once every asset is in place; a failed upload leaves the draft for inspection. Build honk only after that publish. The workflow does not bundle honk.
 2. Update honk's `.github/ci/pins.env` with `DOONA_VERSION` (without `v`), `DOONA_REVISION` (the peeled doona tag commit), and `DOONA_SHA256` and `DOONA_LITE_SHA256` (the API digests of the program and lite archives). honk's release then embeds this doona version and attaches `doona-source-<version>.tar.gz`. Link that honk release from the doona release notes under Pairing with honk; the doona release carries no honk builds.
 
 For tag `v0.1.0-rc.7`, release assets keep the upstream version without `v`. See the
