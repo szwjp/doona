@@ -82,7 +82,7 @@ describe('dae', () => {
     const {runtime_settings: _omitted, ...resources} = capabilities.resources;
     const without = normalizeCapabilities({...capabilities, resources} as unknown as ReportedCapabilities);
     expect(without.unreported).toContain('runtime_settings');
-    expect(dae.reason('runtime_settings', without)).toEqual({code: 'no-switch'});
+    expect(dae.reason('runtime_settings', without)).toEqual({code: 'build-lacks'});
   });
 
   it('explains node edits, services and what dae never switches on', () => {

@@ -18,8 +18,9 @@ const unlessRunning = (resources: Capabilities['resources']): EngineReason => ({
 
 function reason(subject: EngineSubject, capabilities: Capabilities): EngineReason | undefined {
   const resources = capabilities.resources;
-  // dae never implements runtime settings, so a build that leaves the resource out is not missing a feature.
-  if (subject === 'runtime_settings') return {code: 'no-switch'};
+  // Builds that advertise runtime settings serve them; an older build that leaves the resource out is missing the
+  // feature rather than a switch.
+  if (subject === 'runtime_settings') return resources.runtime_settings.available ? undefined : lacks;
   // A resource an older build leaves out is off because that build does not have it, which is all dae can say.
   if (capabilities.unreported?.includes(subject as keyof Capabilities['resources'])) return lacks;
   switch (subject) {
