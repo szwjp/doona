@@ -6,6 +6,13 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.14] - 2026-11-14
+
+### Fixed
+
+- A backend that shares this page's origin but is not served at `/ui/` is not
+  the page's engine: its address stays editable.
+
 ## [0.1.0-rc.13] - 2026-11-14
 
 ### Added

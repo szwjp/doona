@@ -152,7 +152,9 @@ export function hostedRoot(loc: {origin: string; pathname: string}): string {
 // address follows the page origin and needs no stored copy.
 export function servedByBackend(api: string | null | undefined, loc?: {origin: string; pathname: string}): boolean {
   const at = loc ?? globalThis.location;
-  return !!api && !!at && api === hostedRoot(at);
+  // Only the /ui/ mount means an engine serves this page (dae mounts doona there). A static build at the root of the
+  // same origin is not the backend, and its address stays editable.
+  return !!api && !!at && /\/ui(?:\/|$)/.test(at.pathname) && api === hostedRoot(at);
 }
 
 // The native API's default port, the contract's example server.

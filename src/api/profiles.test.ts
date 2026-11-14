@@ -149,6 +149,7 @@ it('suggests honk on the page host when no backend is saved', () => {
 it('treats a backend that serves this page as the page address', () => {
   const at = {origin: 'http://192.168.1.1:9527', pathname: '/ui/'};
   expect(servedByBackend('http://192.168.1.1:9527', at)).toBe(true);
+  expect(servedByBackend('http://192.168.1.1:9527', {origin: 'http://192.168.1.1:9527', pathname: '/'})).toBe(false);
   expect(servedByBackend('http://192.168.1.1:9527', {origin: 'http://192.168.1.1:9527', pathname: '/router/ui/'})).toBe(false);
   expect(servedByBackend('http://192.168.1.1:9528', at)).toBe(false);
   expect(servedByBackend('mock', at)).toBe(false);
