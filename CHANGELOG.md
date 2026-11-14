@@ -6,6 +6,15 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.12] - 2026-11-14
+
+### Added
+
+- The settings page shows the engine's bound listener read-only, so the bind
+  address and the URL this browser uses are both visible.
+- When the panel is served by the dae it talks to, the backend URL is the page
+  address and is read-only, so it cannot point at a stale listener.
+
 ## [0.1.0-rc.11] - 2026-11-14
 
 ### Fixed
