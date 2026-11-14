@@ -6,6 +6,12 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.18] - 2026-11-14
+
+### Changed
+
+- The hosted-backend note talks about the page address, not the engine listener.
+
 ## [0.1.0-rc.17] - 2026-11-14
 
 ### Changed

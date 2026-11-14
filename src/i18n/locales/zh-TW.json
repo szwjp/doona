@@ -1654,7 +1654,7 @@
   "settings.about": "關於",
   "settings.addProfile": "新增連線設定檔",
   "settings.apiHelp": "填寫後端的根網址或反向代理前綴，不是 /api/v1；填入 mock 可使用內建示範資料。",
-  "settings.apiHelpHosted": "此面板由它所連線的 dae 託管，因此後端位址就是目前頁面位址，並隨引擎監聽位址變更。",
+  "settings.apiHelpHosted": "此面板由它所連線的 dae 託管，因此後端位址就是目前頁面位址，並隨它一起變更。",
   "settings.apiMajor": "後端 API 主版本為 {major}，本面板依 API 主版本 1 的契約實作；欄位可能不相容。",
   "settings.appearance": "外觀",
   "settings.apply": "套用",
