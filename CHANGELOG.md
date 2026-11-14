@@ -6,7 +6,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
-## [0.1.0-rc.12] - 2026-11-14
+## [0.1.0-rc.13] - 2026-11-14
 
 ### Added
 
