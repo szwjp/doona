@@ -6,6 +6,15 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.11] - 2026-11-14
+
+### Fixed
+
+- The settings page loads on Safari 17 and other browsers without the static
+  `URL.parse` method: demo URL parsing uses the constructor instead.
+- dae now advertises `runtime_settings`; a build that leaves the resource out is
+  reported as missing the feature rather than a switch the engine never offers.
+
 ## [0.1.0-rc.10] - 2026-11-13
 
 ### Fixed
