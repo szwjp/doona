@@ -6,6 +6,13 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Entries live in [changes/](changes/) until release.
 
+## [0.1.0-rc.15] - 2026-11-14
+
+### Fixed
+
+- The settings catalogue stays sorted, so the i18n gate accepts the new
+  listener strings.
+
 ## [0.1.0-rc.14] - 2026-11-14
 
 ### Fixed
