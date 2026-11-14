@@ -148,6 +148,13 @@ export function hostedRoot(loc: {origin: string; pathname: string}): string {
   return loc.origin + prefix;
 }
 
+// Whether this page is served by the backend it talks to: the saved address equals the page's root, so the backend
+// address follows the page origin and needs no stored copy.
+export function servedByBackend(api: string | undefined, loc?: {origin: string; pathname: string}): boolean {
+  const at = loc ?? globalThis.location;
+  return !!api && !!at && api === hostedRoot(at);
+}
+
 // The native API's default port, the contract's example server.
 const NATIVE_API_PORT = 9527;
 

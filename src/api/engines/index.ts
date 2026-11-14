@@ -36,3 +36,4 @@ export function engineOf(version: Pick<Version, 'engine'> | undefined): Engine {
 }
 
 export {configManagement, configOf} from './config';
+export {daeListener} from './dae';

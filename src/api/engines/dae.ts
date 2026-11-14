@@ -10,9 +10,21 @@ const lacks: EngineReason = {code: 'build-lacks'};
 const writeSwitch = {key: api('config_write'), value: 'true'};
 // dae reports its own facts inside the config resource: the layout it needs for writes, the sources it hides and the
 // store it keeps them in (component/nativeapi/handlers.go).
-type DaeConfig = {layout?: {kind?: string; reason?: string}; hidden_sources?: string[]; store?: {kind?: string}};
+type DaeConfig = {
+  layout?: {kind?: string; reason?: string};
+  hidden_sources?: string[];
+  store?: {kind?: string};
+  listener?: {listen?: string; anonymous_loopback?: boolean};
+};
 const extension = (capabilities: Capabilities): DaeConfig | undefined =>
   (capabilities.resources.config as unknown as Record<string, unknown>)['x-dae'] as DaeConfig | undefined;
+
+// The address the engine bound, as it reports it in its config extension. Null for an engine or build that does not
+// report one. A wildcard bind (0.0.0.0) is not dialable: the page shows it next to the URL it actually uses.
+export function daeListener(capabilities: Capabilities): string | null {
+  const listen = extension(capabilities)?.listener?.listen;
+  return typeof listen === 'string' && listen.trim() ? listen : null;
+}
 // dae config.rs running: the loaded sources and the engine's command channel.
 const unlessRunning = (resources: Capabilities['resources']): EngineReason => ({code: resources.config.available ? 'starting-or-stopping' : 'config-unloaded'});
 

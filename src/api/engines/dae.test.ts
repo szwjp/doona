@@ -1,9 +1,11 @@
 import {describe, expect, it} from 'vitest';
 import {capabilities} from '../../../mock/fixtures';
+import {daeCapabilities} from '../../../mock/fixtures/dae';
 import {normalizeCapabilities} from '../capabilities';
 import type {Capabilities, ReportedCapabilities} from '../model';
 import {engineOf, type EngineSubject} from '.';
 import {daeGlobal} from './daeSettings';
+import {daeListener} from './dae';
 import {scanConfig} from '../../dae/text';
 
 type Resources = Capabilities['resources'];
@@ -24,6 +26,13 @@ describe('dae', () => {
     expect(dae.restartOnly).toEqual(['bpf_conn_state_map_size']);
     // dae records a fixed ring of closed flows, so there is no on-demand grace period to wait out.
     expect(dae.flowDemandGraceSeconds).toBeNull();
+  });
+
+  it('reports the bound listener from its config extension', () => {
+    expect(daeListener(daeCapabilities)).toBe('0.0.0.0:9527');
+    expect(daeListener(capabilities)).toBeNull();
+    const without = {...capabilities, resources: {...capabilities.resources, config: {...capabilities.resources.config, 'x-dae': {}} as never}};
+    expect(daeListener(without)).toBeNull();
   });
 
   it('accepts the share-link schemes dae parses and not honk-only ones', () => {

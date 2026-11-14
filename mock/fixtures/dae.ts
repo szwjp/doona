@@ -26,7 +26,15 @@ export const daeCapabilities: Capabilities = {
     runtime_settings: {available: false},
     providers: {...honkCapabilities.resources.providers, can_manage: false},
     geodata: {available: true, can_update: false, assets: ['geoip', 'geosite']},
-    config: {...daeConfig, 'x-dae': {store: daeConfig.store, layout: {kind: 'managed', reason: ''}, hidden_sources: daeConfig.hidden_sources}} as never,
+    config: {
+      ...daeConfig,
+      'x-dae': {
+        store: daeConfig.store,
+        layout: {kind: 'managed', reason: ''},
+        hidden_sources: daeConfig.hidden_sources,
+        listener: {listen: '0.0.0.0:9527', anonymous_loopback: false}
+      }
+    } as never,
     groups: {...honkCapabilities.resources.groups, max_patch_operations: 2},
     // dae keeps a ring of closed flows whether or not a client reads it, and traces routing without a live lookup.
     flows: {...honkCapabilities.resources.flows, recording: 'on', min_flows: undefined, max_flows: 2048, retention_seconds: 900, max_steps_per_flow: 1},

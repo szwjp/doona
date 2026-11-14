@@ -1,5 +1,5 @@
 import {expect, it, vi} from 'vitest';
-import {detectHostedBackend, suggestedBackendUrl} from './profiles';
+import {detectHostedBackend, servedByBackend, suggestedBackendUrl} from './profiles';
 
 it.each(['discovery', 'challenge'])('keeps standard hosted profile creation after a %s response', async kind => {
   const values = new Map<string, string>();
@@ -144,4 +144,14 @@ it('suggests honk on the page host when no backend is saved', () => {
   expect(suggestedBackendUrl(new URL('http://[::1]:8080/ui/'))).toBe('http://[::1]:9527');
   expect(suggestedBackendUrl({protocol: 'file:', hostname: ''})).toBe('');
   expect(suggestedBackendUrl({protocol: 'http:', hostname: ''})).toBe('');
+});
+
+it('treats a backend that serves this page as the page address', () => {
+  const at = {origin: 'http://192.168.1.1:9527', pathname: '/ui/'};
+  expect(servedByBackend('http://192.168.1.1:9527', at)).toBe(true);
+  expect(servedByBackend('http://192.168.1.1:9527', {origin: 'http://192.168.1.1:9527', pathname: '/router/ui/'})).toBe(false);
+  expect(servedByBackend('http://192.168.1.1:9528', at)).toBe(false);
+  expect(servedByBackend('mock', at)).toBe(false);
+  expect(servedByBackend('', at)).toBe(false);
+  expect(servedByBackend(undefined, at)).toBe(false);
 });

@@ -82,6 +82,7 @@ type TextFieldProps = Pick<
   | 'validationBehavior'
   | 'autoFocus'
   | 'isDisabled'
+  | 'isReadOnly'
   | 'isRequired'
   | 'aria-describedby'
 > &

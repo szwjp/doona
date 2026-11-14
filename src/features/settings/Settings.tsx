@@ -48,6 +48,8 @@ export function Settings({query}: PageProps) {
   const recorded = useDiagnostics();
   const {
     activeId,
+    hosted,
+    listener,
     staleLogin,
     loginReason,
     firstRun,
@@ -152,13 +154,27 @@ export function Settings({query}: PageProps) {
               label={t('ui.backendUrl')}
               autoComplete="url"
               spellCheck={false}
-              description={t('settings.apiHelp')}
+              description={t(hosted ? 'settings.apiHelpHosted' : 'settings.apiHelp')}
               error={invalidText}
               name="api"
               value={api}
               onChange={changeApi}
+              isReadOnly={hosted}
             />
           </div>
+          {listener && (
+            <div className="rp-contents" data-setting="listener">
+              <TextField
+                label={t('settings.listenerLabel')}
+                description={t('settings.listenerHelp')}
+                name="listener"
+                value={listener}
+                onChange={() => undefined}
+                isReadOnly
+                spellCheck={false}
+              />
+            </div>
+          )}
           {demo ? null : passwordMode ? (
             <p className="rp-label">{t('settings.passwordMode')}</p>
           ) : (

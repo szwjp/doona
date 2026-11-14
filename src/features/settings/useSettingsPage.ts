@@ -1,5 +1,7 @@
 import {useContext, useState} from 'react';
 import {useCapabilities, useVersion} from '../../store';
+import {daeListener} from '../../api/engines';
+import {servedByBackend} from '../../api/profiles';
 import {useT} from '../../i18n';
 import {toast} from '../../ui/ui';
 import {SettingsContext} from '../../shell/preferences';
@@ -26,6 +28,11 @@ export function useSettingsPage(query: string) {
       }
     : null;
   const hint = offer ? null : installHint();
+  // The engine reports the address it bound; the page shows it read-only next to
+  // the backend URL. When dae serves this page, the backend URL is the page's own
+  // address and follows the listener, so it is locked rather than editable.
+  const listener = capabilities.data ? daeListener(capabilities.data) : null;
+  const hosted = servedByBackend(form.saved.api);
   return {
     ...form,
     lang,
@@ -39,6 +46,8 @@ export function useSettingsPage(query: string) {
     // Until something is saved the app shows demo data, whatever address the field holds.
     firstRun: form.saved.api === null ? t(form.demo ? 'settings.firstRun' : 'settings.firstRunUnsaved') : null,
     activeId: form.saved.activeId,
+    hosted,
+    listener,
     invalidText: form.invalid ? t('settings.invalidUrl') : undefined,
     tokenType: showToken ? 'text' : 'password',
     tokenToggleText: t(showToken ? 'settings.hideToken' : 'settings.showToken'),
