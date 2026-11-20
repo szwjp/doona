@@ -108,6 +108,8 @@ test('the traffic card says kernel-forwarded direct traffic is not counted, only
 });
 
 test('the outbound mode is staged and applied as a configuration write with a reload', async ({page}) => {
+  // From 1440px the mode card's third holds its segmented control whole; narrower, it holds the picker (see below).
+  await page.setViewportSize({width: 1440, height: 900});
   const {api} = await mockBackend(page);
   const source = (await api.config()).sources.find(source => source.kind === 'main')!;
   const ordinary = '  domain(suffix: doubleclick.net) -> block\n';
@@ -141,10 +143,17 @@ test('the outbound mode is staged and applied as a configuration write with a re
   await expect(await routing()).not.toContainText('doona: outbound mode');
 });
 
+// At 1280px the mode card's third is too narrow for its segmented control beside Apply, so the control is its picker,
+// on the same line and staging the same choice.
 test('applying a mode keeps the Apply button that the pending announcement names', async ({page}) => {
+  await page.setViewportSize({width: 1280, height: 900});
   await page.goto('/#/activity');
-  const apply = page.locator('[data-instance="mode"]').getByRole('button', {name: 'Apply', exact: true});
-  await page.getByRole('radiogroup', {name: 'Outbound mode'}).getByRole('radio', {name: 'Direct', exact: true}).click();
+  const card = page.locator('[data-instance="mode"]');
+  const apply = card.getByRole('button', {name: 'Apply', exact: true});
+  await expect(page.getByRole('radiogroup', {name: 'Outbound mode'})).toHaveCount(0);
+  await card.locator('.rp-segpick').getByRole('button').click();
+  await page.getByRole('option', {name: 'Direct', exact: true}).click();
+  await expect(card.locator('.rp-segpick')).toContainText('Direct');
   const id = await apply.getAttribute('id');
   await apply.click();
   await page.getByRole('alertdialog', {name: 'Apply Direct mode?'}).getByRole('button', {name: 'Apply', exact: true}).click();
@@ -162,6 +171,9 @@ test('applying a mode keeps the Apply button that the pending announcement names
 });
 
 test('read-only main configuration keeps the current mode and explains the write restriction', async ({page}) => {
+  // The status beside the mode is wider than Apply, so the segmented control shows whole where the mode card has a row
+  // of its own.
+  await page.setViewportSize({width: 1024, height: 900});
   const api = createMockApi();
   const capabilities = await api.capabilities();
   capabilities.resources.events.available = false;
@@ -385,11 +397,14 @@ test('the latency tile names an active node that is unavailable and keeps its si
   await jp.click();
   await expect(tile.locator('.rp-light')).toHaveText('Unavailable');
   expect((await box(tile)).height).toBe(height);
-  // The light takes the line's place: each row keeps one height, and the tiles keep their sizes without lines.
+  // The light takes the line's place: each row keeps one height, and the tiles keep their sizes without lines. Tops are
+  // read from the section's top, since the status card above may wrap its line by its own width.
   const sizes = () =>
     page
       .locator("[data-profile='metrics'] > *")
-      .evaluateAll(tiles => tiles.map(tile => [Math.round(tile.getBoundingClientRect().top), tile.getBoundingClientRect().height]));
+      .evaluateAll(tiles =>
+        tiles.map(tile => [Math.round(tile.getBoundingClientRect().top - tile.parentElement!.getBoundingClientRect().top), tile.getBoundingClientRect().height])
+      );
   const lit = await sizes();
   for (const [top] of lit) expect(new Set(lit.filter(other => other[0] === top).map(other => other[1])).size, 'one height per row').toBe(1);
   await page.evaluate(() => localStorage.setItem('doona-sparklines', 'off'));
@@ -815,6 +830,9 @@ test.describe('many outbounds', () => {
 });
 
 test('an engine whose configuration syntax doona does not write shows no mode and takes no change', async ({page}) => {
+  // The status beside the mode is wider than Apply, so the segmented control shows whole where the mode card has a row
+  // of its own.
+  await page.setViewportSize({width: 1024, height: 900});
   const {api, handlers, requests} = await mockBackend(page);
   const main = (await api.config()).sources.find(source => source.kind === 'main')!;
   const marked = main.content!.replace('\nrouting {\n', '\nrouting {\n  l4proto(tcp, udp) -> proxy # doona: outbound mode\n');
@@ -834,6 +852,7 @@ test('an engine whose configuration syntax doona does not write shows no mode an
 });
 
 test('the mode card waits for the version before saying the mode is not provided', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 900});
   const {api, handlers} = await mockBackend(page);
   const version = await api.version();
   let answer = () => {};
@@ -852,6 +871,7 @@ test('the mode card waits for the version before saying the mode is not provided
 });
 
 test('staged mode changes require discard before navigation', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 900});
   await page.goto('/#/activity');
   const mode = page.getByRole('radiogroup', {name: 'Outbound mode'});
   await mode.getByRole('radio', {name: 'Direct', exact: true}).click();
@@ -941,6 +961,7 @@ test('optional runtime does not block independent activity sections or poll an u
 });
 
 test('interleaved mandatory rules reject mode changes without writing configuration', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 900});
   const {api, handlers, requests} = await mockBackend(page);
   const config = await api.config();
   const source = config.sources.find(source => source.kind === 'main')!;
@@ -959,6 +980,7 @@ test('interleaved mandatory rules reject mode changes without writing configurat
 });
 
 test('the demo switches the outbound mode and back while preserving mandatory rules', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 900});
   const {api} = await mockBackend(page);
   const main = (await api.config()).sources.find(source => source.kind === 'main')!;
   const block = scanConfig(main.content!).blocks.find(block => block.name === 'routing')!;
@@ -1164,3 +1186,129 @@ test('the latency menu contains only Automatic and group names with one checked 
   await expect(menu.locator('[aria-checked="true"]')).toHaveCount(1);
   await expect(menu.getByRole('menuitemradio', {name: 'Automatic', exact: true})).toHaveAttribute('aria-checked', 'true');
 });
+
+// The traffic chart at every width: a plot for download over one for upload, one height each, every axis label inside
+// the plot's box, a value gutter as wide as its widest label and the gap, time labels apart from each other and under
+// the lower plot only, readable secondary text, and no ring on the plot under a pointer or after a click. The legend is
+// one line of each series' swatch, name and live value from the card's text inset, and the plots take the card down to
+// its padding. Hovering either plot guides across both and tips a table: the time over each series' current value,
+// peak and average, the last two of which the chart's description also carries.
+for (const [width, scheme] of [
+  [1440, 'dark'],
+  [1440, 'light'],
+  [390, 'dark']
+] as const)
+  test.describe(`traffic chart ${width} ${scheme}`, () => {
+    test.use({viewport: {width, height: 900}, storage: {'doona-lang': 'zh-TW', 'doona-scheme': scheme}});
+    test('stacks its plots, keeps its labels inside and apart, tips both series and leaves its plot unringed under a pointer', async ({page}) => {
+      await page.goto('/#/activity');
+      const card = page.locator('[data-instance="history"] section.rp-card');
+      const plot = card.locator('.rp-area-plot > svg');
+      await expect(plot).toBeVisible();
+      await expect(card.locator('.rp-facts')).toHaveCount(0);
+      await expect(card.locator('.rp-legend .it')).toHaveCount(2);
+      await expect(card.locator('.rp-area-marks')).toHaveCount(2);
+      await page.evaluate(() => document.fonts.ready);
+      const geometry = await card.evaluate(card => {
+        const svg = card.querySelector('.rp-area-plot > svg')!.getBoundingClientRect();
+        const contrast = (fore: string, back: string) => {
+          const luminance = (colour: string) => {
+            const [r, g, b] = colour
+              .match(/[\d.]+/g)!
+              .map(Number)
+              .map(v => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          };
+          const [hi, lo] = [luminance(fore), luminance(back)].sort((a, b) => b - a);
+          return (hi + 0.05) / (lo + 0.05);
+        };
+        const ground = getComputedStyle(card).backgroundColor;
+        const labels = [...card.querySelectorAll('.rp-area-tick, .rp-legend .it')];
+        const pad = getComputedStyle(card);
+        const outer = card.getBoundingClientRect();
+        const inner = {
+          left: outer.left + parseFloat(pad.borderLeftWidth) + parseFloat(pad.paddingLeft),
+          right: outer.right - parseFloat(pad.borderRightWidth) - parseFloat(pad.paddingRight),
+          bottom: outer.bottom - parseFloat(pad.borderBottomWidth) - parseFloat(pad.paddingBottom)
+        };
+        const grid = card.querySelector('.rp-area-grid')!.getBoundingClientRect();
+        const values = [...card.querySelectorAll('.rp-area-y-ticks text')].map(text => text.getBoundingClientRect());
+        const times = [...card.querySelectorAll('.rp-area-x-ticks text')].map(text => text.getBoundingClientRect()).sort((a, b) => a.left - b.left);
+        const entries = [...card.querySelectorAll('.rp-legend .it')].map(entry => entry.getBoundingClientRect());
+        const token = (name: string) => parseFloat(getComputedStyle(card).getPropertyValue(name));
+        return {
+          gaps: {gutter: token('--rp-space-2'), times: token('--rp-space-4')},
+          ticks: [...values, ...times].map(box => ({
+            above: svg.top - box.top,
+            below: box.bottom - svg.bottom,
+            start: box.left - svg.left,
+            end: svg.right - box.right
+          })),
+          // Each plot labels at least its top.
+          valueLabels: values.length,
+          timeGaps: times.slice(1).map((box, i) => box.left - times[i].right),
+          gutter: Math.min(...values.map(box => box.left)) - grid.right,
+          plotStart: svg.left - inner.left,
+          band: inner.bottom - svg.bottom,
+          legendLines: new Set(entries.map(entry => Math.round(entry.top))).size,
+          legendStart: Math.min(...entries.map(entry => entry.left)) - inner.left,
+          legendEnd: Math.max(...entries.map(entry => entry.right)) - inner.right,
+          // The swatch, the name, then the live value.
+          entries: [...card.querySelectorAll('.rp-legend .it')].map(entry => [...entry.childNodes].map(node => node.nodeName)),
+          description: card.querySelector('svg desc')?.textContent,
+          labels: labels.map(label => {
+            const style = getComputedStyle(label);
+            return {size: parseFloat(style.fontSize), ratio: contrast(label.tagName === 'text' ? style.fill : style.color, ground)};
+          })
+        };
+      });
+      for (const tick of geometry.ticks) {
+        expect(tick.above, 'label above the plot box').toBeLessThanOrEqual(0.5);
+        expect(tick.below, 'label below the plot box').toBeLessThanOrEqual(0.5);
+        expect(tick.start, 'label before the plot box').toBeGreaterThanOrEqual(-0.5);
+        expect(tick.end, 'label past the plot box').toBeGreaterThanOrEqual(-0.5);
+      }
+      expect(geometry.valueLabels).toBeGreaterThanOrEqual(2);
+      for (const gap of geometry.timeGaps) expect(gap, 'time labels apart').toBeGreaterThanOrEqual(geometry.gaps.times);
+      expect(geometry.gutter, 'value gutter').toBeGreaterThanOrEqual(geometry.gaps.gutter - 0.5);
+      expect(geometry.gutter, 'value gutter').toBeLessThanOrEqual(geometry.gaps.gutter + 1.5);
+      expect(Math.abs(geometry.plotStart), 'plot at the text inset').toBeLessThanOrEqual(1);
+      expect(Math.abs(geometry.band), 'no band under the plot').toBeLessThanOrEqual(1);
+      expect(geometry.legendLines, 'legend on one line').toBe(1);
+      expect(Math.abs(geometry.legendStart), 'legend at the text inset').toBeLessThanOrEqual(1);
+      expect(geometry.legendEnd, 'legend within the card').toBeLessThanOrEqual(1);
+      for (const entry of geometry.entries) expect(entry).toEqual(['I', '#text', '#text', 'B']);
+      expect(geometry.description).toMatch(/^下載峰值：.+下載平均：.+上傳峰值：.+上傳平均：/);
+      expect(geometry.labels.length).toBeGreaterThan(4);
+      for (const label of geometry.labels) {
+        expect(label.size).toBeGreaterThanOrEqual(12);
+        expect(label.ratio).toBeGreaterThanOrEqual(4.5);
+      }
+      // A pointer over the lower plot guides across both and tips both series.
+      await plot.scrollIntoViewIfNeeded();
+      const area = (await plot.boundingBox())!;
+      await page.mouse.move(area.x + area.width / 2, area.y + area.height * 0.6);
+      const tip = page.locator('.rp-boundedtip');
+      await expect(tip).toBeVisible();
+      await expect(tip.locator('thead th')).toHaveText([/\d:\d{2}/, '目前', '峰值', '平均']);
+      await expect(tip.locator('tbody th')).toHaveText(['下載', '上傳']);
+      for (const row of await tip.locator('tbody tr').all()) await expect(row.locator('td')).toHaveText([/\d/, /\d/, /\d/]);
+      const guides = await plot.evaluate(svg => [...svg.querySelectorAll(':scope > path[stroke-dasharray]')].map(path => path.getBoundingClientRect().height));
+      expect(guides).toHaveLength(2);
+      expect(Math.abs(guides[0] - guides[1]), 'plots of one height').toBeLessThanOrEqual(1);
+      const box = area;
+      await page.mouse.move(0, 0);
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+      await expect(plot).toHaveCSS('outline-style', 'none');
+      // A click draws no ring, whether or not the browser focuses the plot on it (WebKit does not focus an SVG).
+      await page.mouse.down();
+      await page.mouse.up();
+      await expect(plot).toHaveCSS('outline-style', 'none');
+      // Keyboard focus still draws the ring.
+      await plot.focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      await expect(plot).toBeFocused();
+      await expect(plot).not.toHaveCSS('outline-style', 'none');
+    });
+  });

@@ -20,17 +20,17 @@ import {scaleOf} from './dashboardSizing';
 
 // A chart's legend carries the live value beside its colour, so a charted widget lists the rates once, there.
 export const chartedRates = (item: Pick<Widget, 'id' | 'size'>, form: ModuleForm) => registry[item.id].rate === true && form !== 'kv' && item.size !== 'small';
-// A dashboard card two thirds of a row or wider lists its chart's peak and average beside it (see dashboard.css): by its
-// chosen width, or for Auto by the box its footprint has now.
-function useWide(item: Widget) {
+// A dashboard card two thirds of a row or wider, by the box packing measured (data-wide), lists its compact chart's or
+// readings' peak and average beside them (see dashboard.css).
+function useWide() {
   const surface = useContext(WidgetSurface);
   const cell = useContext(WideCell);
-  return surface === 'dashboard' && (item.width ? item.width === '2/3' || item.width === 'full' : cell);
+  return surface === 'dashboard' && cell;
 }
 export function RuntimeWidget({item, form}: {item: Widget; form: ModuleForm}) {
   const t = useT();
   const locale = LOCALE[useLang()];
-  const wide = useWide(item);
+  const wide = useWide();
   const runtime = useRuntime();
   const r = runtime.data;
   const rates = r?.traffic.rates;
@@ -122,6 +122,7 @@ function HistoryChart({
   fmt: (n: number | null) => string;
   series: {label: string; color: string; values: (number | null)[]}[];
   combine?: boolean;
+  split?: boolean;
   widest?: string;
 }) {
   const t = useT();
@@ -138,7 +139,7 @@ function HistoryChart({
           locale={locale}
           {...chart}
         />
-        {wide && <FactStrip facts={seriesFacts(chart.series, chart.fmt, t)} />}
+        {wide && form === 'sparkline' && <FactStrip facts={seriesFacts(chart.series, chart.fmt, t)} />}
       </div>
     </>
   );
@@ -153,6 +154,8 @@ function TrafficChart({runtime, connections, direction, ...props}: ChartProps & 
     <HistoryChart
       {...props}
       widest={connections ? undefined : formatRate(888e6, locale)}
+      // Download and upload take a plot each in the full chart, as on Activity.
+      split={!connections}
       history={history}
       timestamps={series.timestamps}
       fmt={n => (connections ? (n == null ? '—' : formatNumber(n, locale)) : formatRate(n == null ? null : n * 1000, locale))}
@@ -193,7 +196,7 @@ export function MemoryWidget({item, form}: {item: Widget; form: ModuleForm}) {
   const t = useT();
   const locale = LOCALE[useLang()];
   const surface = useContext(WidgetSurface);
-  const wide = useWide(item);
+  const wide = useWide();
   const memory = useRuntimeMemory();
   const metrics = useCapabilities().data?.resources.runtime_memory?.metrics ?? [];
   const rss = metrics.includes('process.rss_bytes');
