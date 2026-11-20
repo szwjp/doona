@@ -7,7 +7,7 @@
 .rp-note {
   margin: 0;
   font-size: var(--rp-text-sm);
-  line-height: 20px;
+  line-height: var(--rp-line-body);
   color: var(--rp-subtle);
 }
 .rp-toolbar {
@@ -184,6 +184,57 @@
     grid-template-columns: repeat(auto-fill, minmax(max(128px, calc((100% - 17px) / 2)), 1fr));
   }
 }
+/* A detail panel's fields (Kv's `detail`) in titled sections: a field a line, the labels in one column of at most
+   two fifths of the panel, each value beside its label and wrapping under itself. A value drawn as a tag or with a
+   button keeps its label's baseline. */
+.rp-kv-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rp-space-2) var(--rp-space-4);
+  min-width: 0;
+}
+/* Sections in KvSections share their label column through subgrids down to each field. */
+.rp-kv-sections {
+  display: grid;
+  grid-template-columns: fit-content(40%) minmax(0, 1fr);
+  gap: var(--rp-space-6) var(--rp-space-4);
+}
+.rp-kv-sections > .rp-kv-section {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+.rp-kv-sections > .rp-kv-section > * {
+  grid-column: 1 / -1;
+}
+.rp-kv-sections .rp-kv.detail {
+  grid-template-columns: subgrid;
+}
+.rp-kv-title {
+  margin: 0;
+  font-size: var(--rp-text-md);
+  line-height: var(--rp-line-body);
+  font-weight: 700;
+}
+.rp-kv.detail {
+  grid-template-columns: fit-content(40%) minmax(0, 1fr);
+  gap: var(--rp-space-2) var(--rp-space-4);
+  margin: 0;
+}
+.rp-kv.detail > div {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: first baseline;
+}
+.rp-kv.detail .v {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+/* A value drawn as a link tag still copies with its label: the tag stays unselectable to press, its name does not. */
+.rp-kv.detail .rp-tag-label {
+  user-select: text;
+}
 .rp-kv > div {
   min-width: 0;
 }
@@ -194,7 +245,7 @@
 .rp-kv-label {
   display: block;
   font-size: var(--rp-text-xs);
-  line-height: 16px;
+  line-height: var(--rp-line-caption);
   color: var(--rp-subtle);
   font-weight: 400;
 }
@@ -464,7 +515,7 @@
   height: auto;
   padding-block: var(--rp-space-half);
   font-size: var(--rp-text-xs);
-  line-height: 16px;
+  line-height: var(--rp-line-caption);
 }
 /* The backend's words open under the message, past the severity dot, and wrap in the row's width rather than
    widening the columns. */
@@ -510,14 +561,14 @@
 }
 .rp-kv.compact {
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  gap: var(--rp-space-2);
 }
 .rp-kv.compact > div {
   min-inline-size: 0;
 }
 .rp-kv.compact.row {
   display: grid;
-  gap: 8px;
+  gap: var(--rp-space-2);
 }
 .rp-kv.compact.row > div {
   justify-content: space-between;

@@ -53,6 +53,8 @@ test('offers dae policies and writes a new group to the file that holds the sect
 });
 
 test('writes the outbound mode into the file that holds routing', async ({page}) => {
+  // From 1440px the mode card's third holds its segmented control whole; narrower it holds the picker instead.
+  await page.setViewportSize({width: 1440, height: 900});
   await page.goto('/#/activity');
   await page.getByRole('radiogroup', {name: 'Outbound mode'}).getByRole('radio', {name: 'Direct', exact: true}).click();
   await page.locator('[data-instance="mode"]').getByRole('button', {name: 'Apply', exact: true}).click();

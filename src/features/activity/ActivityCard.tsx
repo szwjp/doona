@@ -6,7 +6,21 @@ import LinkIcon from '../../ui/icons/Link';
 import Cpu from '../../ui/icons/Cpu';
 import Memory from '../../ui/icons/Memory';
 import {useT} from '../../i18n';
-import {Card, CardLink, ContextualHelp, Segmented, Light, ErrorMessage, Empty, Link, ChartWait, SkeletonBar, SkeletonGroup, ValueTile} from '../../ui/ui';
+import {
+  Card,
+  CardLink,
+  ContextualHelp,
+  Segmented,
+  Light,
+  ErrorMessage,
+  Empty,
+  Link,
+  ChartWait,
+  SkeletonBar,
+  SkeletonGroup,
+  TextTooltip,
+  ValueTile
+} from '../../ui/ui';
 import {WideCell} from '../../ui/DashboardTile';
 import {href} from '../../shell/route';
 import {SettingsContext} from '../../shell/preferences';
@@ -24,20 +38,16 @@ import {useRankingCard} from './useRankingCard';
 
 export function ActivityCard({
   item,
-  scale = 1,
   selection,
   ranking
 }: {
   item: {id: string; form?: string; rows?: number; width?: string};
-  // A chart's height as a multiple of its standard height.
-  scale?: number;
   ranking?: {by: string; setBy: (by: string) => void};
   selection?: {chosen: string; setChosen: (id: string) => void};
 }) {
-  // A card two thirds of a row or wider lists its chart's peak and average beside it (see dashboard.css): by its chosen
-  // width, or for Auto by the box its footprint has now.
-  const wideCell = useContext(WideCell);
-  const stats = item.width ? item.width === '2/3' || item.width === 'full' : wideCell;
+  // A value tile two thirds of a row or wider, by the box packing measured (data-wide), lists its sparkline's peak and
+  // average (see dashboard.css). An area chart marks them on its plot and says them in its tip.
+  const stats = useContext(WideCell);
   switch (item.id) {
     case 'mode':
       return <ModeModule part="mode" />;
@@ -57,10 +67,10 @@ export function ActivityCard({
     case 'cpu':
     case 'history':
     case 'status':
-      return <MetricModule kind={item.id} scale={scale} stats={stats} />;
+      return <MetricModule kind={item.id} stats={stats} />;
     // Memory's sparkline form is a value tile like download's; its area form is the chart card.
     case 'memory':
-      return <MetricModule kind={item.form === 'sparkline' ? 'memoryTile' : 'memory'} scale={scale} stats={stats} />;
+      return <MetricModule kind={item.form === 'sparkline' ? 'memoryTile' : 'memory'} stats={stats} />;
     default:
       return null;
   }
@@ -81,7 +91,11 @@ export function RuntimeAlert() {
   const vm = useActivity('status');
   return vm.error ? <ErrorMessage error={vm.error} onRetry={vm.retry} /> : null;
 }
-function MetricModule({kind, scale, stats: wide}: {kind: Parameters<typeof useActivity>[0] | 'memoryTile'; scale: number; stats: boolean}) {
+// An area chart takes its height from the chart token, times the card's height step, which the card's skeleton
+// repeats (dashboard.css); the plots take any height its row gives the card beyond it. Traffic stacks a plot for
+// download over one for upload, whose rates often lie ten times apart; memory's two measures share one scale and one
+// plot.
+function MetricModule({kind, stats: wide}: {kind: Parameters<typeof useActivity>[0] | 'memoryTile'; stats: boolean}) {
   const t = useT();
   const vm = useActivity(kind === 'memoryTile' ? 'memory' : kind);
   const limitNotice = useContext(SettingsContext)?.ap.limitNotice ?? true;
@@ -96,7 +110,7 @@ function MetricModule({kind, scale, stats: wide}: {kind: Parameters<typeof useAc
     case 'status':
       content = (
         <Card className="rp-control-card">
-          <div className="rp-row" data-pack="line">
+          <div className="rp-row">
             {/* The first read draws the state and the link as bars about as wide as their usual text. */}
             {vm.statusLoading ? (
               <SkeletonGroup>
@@ -110,7 +124,7 @@ function MetricModule({kind, scale, stats: wide}: {kind: Parameters<typeof useAc
                 <Light tone={vm.status.tone}>{vm.status.text}</Light>
                 <div className="rp-control-tail">
                   <Link appearance="button" quiet href={href('overview', limitNotice && vm.limited ? {card: 'limits'} : {})}>
-                    {(limitNotice && vm.limited) || t('act.viewDetails')}
+                    <TextTooltip>{(limitNotice && vm.limited) || t('act.viewDetails')}</TextTooltip>
                   </Link>
                 </div>
               </>
@@ -184,26 +198,23 @@ function MetricModule({kind, scale, stats: wide}: {kind: Parameters<typeof useAc
             </ChartWait>
           ) : vm.history.state === 'loading' ? (
             // The legend's line and the chart's height, as the loaded body draws them.
-            <DeferredChart parts={[{line: 'caption'}, {height: 120 * scale}]} />
+            <DeferredChart parts={[{line: 'body'}, {line: 'chart-stacked'}]} />
           ) : vm.history.state === 'empty' ? (
             <ChartWait holds="tall">
               <Empty>{t('act.emptyHistory')}</Empty>
             </ChartWait>
           ) : (
-            <div className="rp-chart-stats">
-              <Legend series={traffic} fmt={chartRate} />
-              <AreaChart
-                label={t('act.traffic')}
-                series={traffic}
-                timestamps={vm.trafficTimestamps}
-                fmt={chartRate}
-                locale={locale}
-                height={120 * scale}
-                fill
-                window={vm.trafficBounds}
-              />
-              {wide && <FactStrip facts={seriesFacts(traffic, chartRate, t)} />}
-            </div>
+            <AreaChart
+              legend={<Legend series={traffic} fmt={chartRate} />}
+              label={t('act.traffic')}
+              series={traffic}
+              timestamps={vm.trafficTimestamps}
+              fmt={chartRate}
+              locale={locale}
+              fill
+              split
+              window={vm.trafficBounds}
+            />
           )}
         </Card>
       );
@@ -245,21 +256,17 @@ function MetricModule({kind, scale, stats: wide}: {kind: Parameters<typeof useAc
           {vm.memoryState.error ? (
             <ErrorMessage error={vm.memoryState.error} onRetry={vm.memoryState.retry} />
           ) : vm.memoryState.state === 'ready' ? (
-            <div className="rp-chart-stats">
-              <Legend series={memorySeries} fmt={memoryBytes} />
-              <AreaChart
-                label={t('act.memory')}
-                series={memorySeries}
-                timestamps={vm.memoryTimestamps}
-                fmt={memoryBytes}
-                locale={locale}
-                height={150 * scale}
-                fill
-                baseline="auto"
-                window={vm.memoryBounds}
-              />
-              {wide && <FactStrip facts={seriesFacts(memorySeries, memoryBytes, t)} />}
-            </div>
+            <AreaChart
+              legend={<Legend series={memorySeries} fmt={memoryBytes} />}
+              label={t('act.memory')}
+              series={memorySeries}
+              timestamps={vm.memoryTimestamps}
+              fmt={memoryBytes}
+              locale={locale}
+              fill
+              baseline="auto"
+              window={vm.memoryBounds}
+            />
           ) : vm.memoryState.state === 'unavailable' ? (
             <Empty>{t('act.noHistory')}</Empty>
           ) : (

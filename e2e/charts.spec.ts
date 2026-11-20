@@ -400,44 +400,51 @@ test('activity draws all eight charts without loading a chart vendor', async ({p
   expect(requests.filter(url => /vendor-charts/.test(url))).toEqual([]);
   // The CPU and latency lines draw from their second sample, the latency one after the next node list read.
   await page.clock.runFor(61000);
-  // Activity's own eight; a widget card further down draws its chart when it comes into view.
+  // Activity's own eight, the memory card under the fold once it comes into view, as a widget card further down does.
+  await page.locator("main [data-module='memory']").scrollIntoViewIfNeeded();
   const own = ['download', 'upload', 'connections', 'latency', 'cpu', 'history', 'outbounds', 'memory'].map(
     id => `main [data-module='${id}'] .rp-activity-surface`
   );
   await expect(page.locator(own.join(', '))).toHaveCount(8);
   const traffic = page.getByRole('region', {name: 'Traffic', exact: true});
   const chart = traffic.getByRole('application');
+  // The tip opens over the page, outside the card that clips the chart.
+  const overlay = page.locator('body > .rp-charttip-bounded');
   await chart.focus();
-  await expect(traffic.getByRole('status')).toBeVisible();
+  await expect(overlay.getByRole('status')).toBeVisible();
   await page.keyboard.press('Escape');
   // A live update must not reopen a tip dismissed from the keyboard.
   await page.clock.runFor(5100);
-  await expect(traffic.getByRole('status')).toBeHidden();
+  await expect(overlay.getByRole('status')).toBeHidden();
   await page.keyboard.press('ArrowRight');
-  await expect(traffic.getByRole('status')).toBeVisible();
+  await expect(overlay.getByRole('status')).toBeVisible();
   await page.keyboard.press('ArrowLeft');
-  await expect(traffic.getByRole('status')).toBeVisible();
+  await expect(overlay.getByRole('status')).toBeVisible();
   // The tip changes on every arrow key, so it waits for the screen reader instead of interrupting it.
-  await expect(traffic.getByRole('status')).toHaveAttribute('aria-live', 'polite');
+  await expect(overlay.getByRole('status')).toHaveAttribute('aria-live', 'polite');
   await page.emulateMedia({reducedMotion: 'no-preference'});
-  await expect(traffic.locator('.rp-charttip-bounded')).toHaveCSS('transition-duration', '0.4s');
+  await expect(overlay).toHaveCSS('transition-duration', '0.4s');
   await page.emulateMedia({reducedMotion: 'reduce'});
-  await expect(traffic.locator('.rp-charttip-bounded')).toHaveCSS('transition-duration', '0s');
+  await expect(overlay).toHaveCSS('transition-duration', '0s');
   await page.keyboard.press('Enter');
-  await expect(traffic.getByRole('status')).toBeHidden();
+  await expect(overlay.getByRole('status')).toBeHidden();
   await page.keyboard.press('Enter');
-  await expect(traffic.getByRole('status')).toBeVisible();
+  await expect(overlay.getByRole('status')).toBeVisible();
 });
 
 for (const lang of ['zh-TW', 'zh-CN']) {
   test.describe(`activity tooltips in ${lang}`, () => {
     test.use({storage: {'doona-lang': lang}});
-    test('sorts translated series names consistently', async ({page}) => {
+    test('lists translated series in the legend order', async ({page}) => {
       await page.goto('/#/activity');
       const memory = page.locator('[data-module=memory]');
       await memory.scrollIntoViewIfNeeded();
       await memory.getByRole('application').focus();
-      await expect(memory.locator('.rp-charttip-bounded li').first()).toContainText(/^cgroup/);
+      const first = (await memory
+        .locator('.rp-legend .it')
+        .first()
+        .evaluate(entry => entry.childNodes[1].textContent))!;
+      await expect(page.locator('body > .rp-charttip-bounded tbody th').first()).toContainText(new RegExp(`^${first}`));
     });
   });
 }
