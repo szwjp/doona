@@ -1,5 +1,4 @@
 import {createContext, useContext, useId, useLayoutEffect, useRef, useState, type ReactNode, type Ref} from 'react';
-import {flushSync} from 'react-dom';
 import {ChartDescription} from './charts/description';
 import {cx} from './cx';
 import {HelpRow, type Help} from './ContextualHelp';
@@ -40,8 +39,10 @@ export function TileHead({icon, tint, kind, layout, label, tip, children}: TileH
 }
 
 // A control card's line never wraps: by the card's own width it shows its label whole, then without the label's icon,
-// then the icon alone. The line is measured with every part whole, so the step does not depend on the one shown; a
-// resize, new words or a late web font measure it again, and a new step commits before the browser paints.
+// then the icon alone. The label and its icon are measured whole — with every part drawn, whatever step is committed —
+// and the control beside them fits itself to the room that is left; measuring the whole line instead would let the step
+// decide the measurement that decides the step, which on WebKit packs and unpacks forever. A resize, new words or a late
+// web font measure it again, and a new step commits before the browser paints.
 type ControlStep = 'full' | 'bare' | 'icon';
 function ControlLine({tile, label, children}: {tile: TileHeader; label: string; children: ReactNode}) {
   const ref = useRef<HTMLDivElement>(null);
@@ -49,27 +50,40 @@ function ControlLine({tile, label, children}: {tile: TileHeader; label: string; 
   useLayoutEffect(() => {
     const row = ref.current;
     if (!row) return;
+    let frame = 0;
     const measure = () => {
       const room = row.clientWidth;
       if (!room) return;
+      // Every part whole: the step's own hiding rules would otherwise shrink the line they are chosen by.
+      const committed = row.dataset.step;
+      row.dataset.step = 'full';
       row.dataset.probe = '';
-      const line = row.getBoundingClientRect().width;
-      const head = row.firstElementChild!;
-      const icon = head.firstElementChild!.getBoundingClientRect().width + parseFloat(getComputedStyle(head).columnGap);
+      const head = row.firstElementChild as HTMLElement;
+      const whole = head.getBoundingClientRect().width;
+      const icon = head.querySelector('svg')?.getBoundingClientRect().width ?? 0;
       delete row.dataset.probe;
-      setStep(line <= room + 0.5 ? 'full' : line - icon <= room + 0.5 ? 'bare' : 'icon');
+      row.dataset.step = committed ?? 'full';
+      setStep(whole <= room + 0.5 ? 'full' : whole - icon <= room + 0.5 ? 'bare' : 'icon');
     };
-    const update = () => flushSync(measure);
-    const resized = new ResizeObserver(update);
+    // One measurement per frame: a MutationObserver callback that measures and commits can otherwise re-enter its own
+    // observer, which never yields on WebKit.
+    const later = () => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        measure();
+      });
+    };
+    const resized = new ResizeObserver(later);
     resized.observe(row);
-    const changed = new MutationObserver(update);
+    const changed = new MutationObserver(later);
     changed.observe(row, {subtree: true, childList: true, characterData: true});
-    document.fonts.addEventListener('loadingdone', update);
+    document.fonts.addEventListener('loadingdone', later);
     measure();
     return () => {
+      cancelAnimationFrame(frame);
       resized.disconnect();
       changed.disconnect();
-      document.fonts.removeEventListener('loadingdone', update);
+      document.fonts.removeEventListener('loadingdone', later);
     };
   }, []);
   return (
